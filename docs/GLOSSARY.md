@@ -18,8 +18,12 @@ Términos técnicos usados en este proyecto, explicados en una línea.
   un número de cuenta).
 - **Pool de minado**: un servidor donde muchos ordenadores minan juntos y
   reparten la recompensa, en vez de minar cada uno por su cuenta.
-- **XMRig**: el programa externo y ya existente que hace el trabajo real
-  de minado; nuestro script solo lo configura y lo arranca.
+- **Motor de minado**: el programa que hace el trabajo real de minar
+  (los cálculos que consiguen la recompensa). Nuestros scripts no minan
+  por sí mismos: solo configuran y arrancan este programa. Cada
+  algoritmo necesita un motor compatible (XMRig, T-Rex, lolMiner...).
+- **XMRig**: el motor de minado que usa este proyecto para Monero (y que
+  serviría para otras monedas de la familia RandomX).
 - **RandomX**: el algoritmo de minado que usa Monero, diseñado para
   funcionar bien en procesadores normales (CPU) en vez de necesitar
   hardware especial.
