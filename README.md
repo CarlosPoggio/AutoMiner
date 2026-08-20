@@ -5,6 +5,21 @@ solo tu wallet y la moneda en un fichero de texto.
 
 ## Uso rápido
 
+### Opción A: con el formulario (recomendado)
+
+1. Ejecuta `python3 src/formulario.py`. Se abrirá una ventana que analiza
+   tu ordenador, te dice qué criptomonedas puedes minar con tu hardware
+   y te deja preseleccionada la de mayor ingreso estimado.
+2. Escribe tu wallet y pulsa "Guardar configuración". Esto crea `config.md`.
+3. Instala XMRig si aún no lo tienes (ver más abajo) y ejecuta `python3 src/minar.py`.
+
+Nota: hoy en día `minar.py` solo sabe arrancar el minado de Monero (XMR).
+Si el formulario recomienda otra moneda, `config.md` se genera igual,
+pero tendrás que pedir que se añada el motor de minado de esa moneda
+antes de poder arrancarla de verdad.
+
+### Opción B: a mano
+
 1. Instala XMRig (el programa que hace el minado de verdad). Descárgalo
    desde la página oficial del proyecto XMRig y colócalo en tu `PATH`, o
    copia el ejecutable dentro de la carpeta `bin/` de este proyecto.

@@ -30,3 +30,24 @@ Términos técnicos usados en este proyecto, explicados en una línea.
   a mano cada vez.
 - **CLI (línea de comandos)**: forma de usar un programa escribiendo
   instrucciones de texto en una terminal, en vez de hacer clic en botones.
+- **GPU / CPU**: la GPU es la tarjeta gráfica (útil para minar algunas
+  monedas); la CPU es el procesador principal del ordenador (útil para
+  minar otras monedas, como Monero).
+- **VRAM**: la memoria propia de la tarjeta gráfica. Algunas monedas
+  necesitan una cantidad mínima para poder minarse.
+- **Algoritmo de minado**: la "receta" de cálculo concreta que usa cada
+  criptomoneda (RandomX, KawPow, Etchash...). Determina qué hardware
+  sirve para minarla y con qué programa.
+- **DAG**: una especie de "libro de datos" que usan algunos algoritmos de
+  minado por GPU y que va creciendo con el tiempo; por eso el requisito
+  mínimo de VRAM de esas monedas sube poco a poco.
+- **Ingreso vs. beneficio**: el ingreso es lo que se gana minando; el
+  beneficio es el ingreso menos el coste de la electricidad. Aquí solo
+  calculamos ingreso, porque no preguntamos el precio de tu luz.
+- **Tkinter**: la librería que viene incluida con Python para crear
+  ventanas y formularios sencillos, sin instalar nada adicional (en
+  algunos Linux hay que instalar un paquete extra del sistema).
+- **API**: una forma en que un programa pide datos a otro por internet
+  (aquí se usa para consultar ingresos de minado en tiempo real).
+- **JSON**: un formato de texto muy común para intercambiar datos entre
+  programas.

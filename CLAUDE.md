@@ -9,18 +9,37 @@ frase sencilla y regístralas en `docs/DECISIONS.md`.
 Herramienta personal para iniciar el minado de criptomonedas (uso propio,
 con su propia wallet y su propio ordenador). Un fichero de texto
 (`config.md`) guarda la wallet y la moneda; el script `src/minar.py` lee
-ese fichero y arranca XMRig con esos datos.
+ese fichero y arranca XMRig con esos datos. `src/formulario.py` es una
+ventana muy sencilla (Tkinter) que analiza el hardware del ordenador,
+muestra qué monedas se pueden minar con él y genera `config.md` por ti.
+
+Módulos en `src/`: `hardware.py` (detecta CPU/GPU), `monedas.py`
+(catálogo de monedas de CPU y GPU), `ingresos.py` (ranking de ingresos,
+en vivo o de reserva), `recomendador.py` (junta hardware + catálogo +
+ingresos), `config_writer.py` (escribe `config.md`), `formulario.py` (la
+ventana), `minar.py` (arranca el minado de verdad).
 
 ## Comandos
 
 - Ejecutar tests: `python3 -m unittest discover -s tests -v`
-- Comprobar el script sin minar de verdad: `python3 src/minar.py --dry-run`
-- Ejecutar de verdad (requiere XMRig instalado): `python3 src/minar.py`
+- Abrir el formulario gráfico (rellena config.md por ti): `python3 src/formulario.py`
+  — necesita una pantalla; en Linux puede hacer falta instalar el paquete
+  del sistema `python3-tk` si no abre.
+- Comprobar el script de minado sin minar de verdad: `python3 src/minar.py --dry-run`
+- Ejecutar el minado de verdad (requiere XMRig instalado): `python3 src/minar.py`
 
-No hay dependencias externas de Python (todo usa la librería estándar) para
-que Carlos no tenga que instalar nada complicado. Si en el futuro hace
-falta una librería, añádela a un `requirements.txt` y explica por qué en
-`docs/DECISIONS.md`.
+No hay dependencias externas de Python (todo usa la librería estándar,
+incluyendo Tkinter y la consulta de ingresos por internet) para que
+Carlos no tenga que instalar nada complicado. Si en el futuro hace falta
+una librería de verdad, añádela a un `requirements.txt` y explica por qué
+en `docs/DECISIONS.md`.
+
+Este entorno de sesión en la nube no tiene pantalla ni el paquete gráfico
+de Tkinter instalado, y no se puede instalar (la red está limitada). Por
+eso `formulario.py` no se puede ejecutar ni probar visualmente aquí: solo
+su lógica interna (con tests). Si se toca ese fichero, verifica con tests
+y `py_compile`, y pide al usuario una captura de pantalla o confirmación
+cuando lo pruebe en su propio ordenador.
 
 ## Reglas importantes
 
