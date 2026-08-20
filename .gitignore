@@ -1,0 +1,11 @@
+# Tu configuración real (contiene tu wallet) nunca se sube a git
+config.md
+
+# Ejecutables de minado descargados (pesan mucho y son distintos por SO)
+bin/xmrig
+bin/xmrig.exe
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
