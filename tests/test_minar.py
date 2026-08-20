@@ -45,6 +45,28 @@ class TestMinar(unittest.TestCase):
         self.assertIn("mi-pool.com:1234", cmd)
         self.assertIn("2", cmd)
 
+    def test_wow_zeph_sal_rtm_estan_soportadas(self):
+        for simbolo in ("WOW", "ZEPH", "SAL", "RTM"):
+            self.assertIn(simbolo, minar.MONEDAS_SOPORTADAS, msg=simbolo)
+
+    def test_construir_comando_wownero_usa_rx_wow(self):
+        datos = {"wallet": "Wo3wallet", "moneda": "WOW"}
+        cmd = minar.construir_comando("xmrig", "Wo3wallet", "WOW", datos)
+        self.assertIn("rx/wow", cmd)
+        self.assertIn("wownero.ingest.cryptoknight.cc:50901", cmd)
+
+    def test_construir_comando_raptoreum_incluye_tls(self):
+        datos = {"wallet": "Rwallet", "moneda": "RTM"}
+        cmd = minar.construir_comando("xmrig", "Rwallet", "RTM", datos)
+        self.assertIn("gr", cmd)
+        self.assertIn("--tls", cmd)
+        self.assertIn("rtm.suprnova.cc:4273", cmd)
+
+    def test_validar_wallet_raptoreum_formato_correcto_sin_aviso(self):
+        # No debe lanzar excepción; solo comprobamos que no falla.
+        wallet, moneda, _ = minar.validar({"wallet": "RUZb2pp45x5qAjbS3usXAGW8BzK1fvKJBo", "moneda": "RTM"})
+        self.assertEqual(moneda, "RTM")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -105,6 +105,46 @@ comprobación de que el fichero que genera es compatible con
 `minar.py`), pero la ventana en sí tendrás que abrirla tú la primera vez,
 en tu propio ordenador.
 
+## 2026-08-20 — minar.py ya sabe arrancar 5 monedas, no solo Monero
+
+Preguntaste si, ya que conocemos el motor de cada moneda, podíamos
+arrancarlas todas automáticamente. La respuesta corta es: para 5 de las
+9 monedas de CPU, sí, y ya está hecho; para el resto (incluidas las 15
+de GPU) hace falta más trabajo, y prefiero ir con cuidado en vez de
+improvisarlo. Te explico la diferencia:
+
+**Ya añadido (Wownero, Zephyr, Salvium, Raptoreum):** estas 4 monedas,
+igual que Monero, se minan con el mismo programa, XMRig — solo cambia a
+qué servidor (pool) se conecta y qué "variante" del cálculo usa. Como
+XMRig es un programa de código abierto que ya conocíamos bien, fue
+seguro extenderlo: investigué en fuentes fiables (la propia web de cada
+proyecto, o ejemplos oficiales del repositorio de XMRig en GitHub) el
+pool y la variante correctas para cada una, lo añadí y lo probé.
+
+**Todavía no añadido (Dero, Verus Coin, Xelis, Talecoin, y las 15 de
+GPU):** estas necesitan programas de minado completamente distintos
+(uno por cada familia de algoritmo: T-Rex, lolMiner, gminer, bzminer,
+miniZ...). Antes de automatizarlo de verdad, prefiero ser transparente
+con dos cosas:
+1. Varios de esos programas son gratuitos pero de código cerrado, y
+   cobran una pequeña "comisión del desarrollador" (un pequeño
+   porcentaje del tiempo de minado va para quien hizo el programa, no
+   para ti) — esto afecta un poco al ingreso real, así que merece la
+   pena decírtelo antes de instalar uno.
+2. Esta sesión de trabajo en la nube no tiene tarjeta gráfica ni
+   pantalla, así que no puedo probar de verdad ninguna parte de minado
+   por GPU aquí (solo la lógica que decide qué moneda es posible).
+Por eso, en vez de intentarlo todo a la vez sin poder comprobarlo bien,
+prefiero ir moneda por moneda, empezando por la que realmente vayas a
+usar. Dímelo cuando quieras y seguimos con esa.
+
+Fuentes consultadas para los pools y variantes añadidos: la web oficial
+de Wownero, RavenMiner (Zephyr), HeroMiners (Salvium) y el propio
+repositorio de XMRig en GitHub (ejemplo oficial de Raptoreum/GhostRider
+y lista de variantes RandomX). Los pools por defecto pueden cambiar con
+el tiempo; si alguno deja de funcionar, se puede indicar otro distinto
+añadiendo una línea `pool: otro-servidor:puerto` en `config.md`.
+
 ## 2026-08-20 — El ejecutable de XMRig no se guarda en el repositorio
 
 XMRig es un programa grande y distinto para cada sistema operativo

@@ -11,8 +11,10 @@ Cómo funciona (en palabras simples):
 
 Este script NO reinventa el minado desde cero: usa XMRig por debajo,
 que es el programa estándar y de confianza que usa la comunidad para
-minar monedas de la familia RandomX (la más conocida es Monero / XMR).
-Ver docs/DECISIONS.md para la explicación de por qué se eligió así.
+minar monedas de la familia RandomX (la más conocida es Monero / XMR) y,
+desde esta versión, también GhostRider (Raptoreum), que XMRig soporta de
+forma oficial. Ver docs/DECISIONS.md para la explicación de por qué se
+eligió así, y para las fuentes de cada pool por defecto.
 """
 
 import argparse
@@ -35,6 +37,35 @@ MONEDAS_SOPORTADAS = {
     },
     "MONERO": {  # alias
         "alias_de": "XMR",
+    },
+    "WOW": {
+        "nombre": "Wownero",
+        "algo": "rx/wow",
+        "pool_por_defecto": "wownero.ingest.cryptoknight.cc:50901",
+        # Prefijo de dirección de Wownero: "Wo3...". Es orientativo: si tu
+        # wallet es correcta pero distinta, el script solo avisa, no bloquea.
+        "wallet_regex": r"^Wo3[1-9A-HJ-NP-Za-km-z]{85,100}$",
+    },
+    "ZEPH": {
+        "nombre": "Zephyr Protocol",
+        "algo": "rx/0",
+        "pool_por_defecto": "stratum.ravenminer.com:4000",
+        "wallet_regex": r"^ZEPHYR[1-9A-HJ-NP-Za-km-z]{90,105}$",
+    },
+    "SAL": {
+        "nombre": "Salvium",
+        "algo": "rx/0",
+        "pool_por_defecto": "de.salvium.herominers.com:1228",
+        # No se encontró un prefijo fiable documentado; se acepta un rango
+        # amplio de longitud en vez de arriesgar un aviso incorrecto.
+        "wallet_regex": r"^[1-9A-HJ-NP-Za-km-z]{80,110}$",
+    },
+    "RTM": {
+        "nombre": "Raptoreum",
+        "algo": "gr",
+        "pool_por_defecto": "rtm.suprnova.cc:4273",
+        "extra_args": ["--tls"],
+        "wallet_regex": r"^R[1-9A-HJ-NP-Za-km-z]{33}$",
     },
 }
 
@@ -126,6 +157,7 @@ def construir_comando(xmrig_path: str, wallet: str, moneda: str, datos: dict) ->
     hilos = datos.get("hilos") or datos.get("threads")
     if hilos:
         cmd += ["-t", str(hilos)]
+    cmd += info.get("extra_args", [])
     return cmd
 
 

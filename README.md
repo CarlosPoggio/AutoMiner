@@ -13,10 +13,12 @@ solo tu wallet y la moneda en un fichero de texto.
 2. Escribe tu wallet y pulsa "Guardar configuración". Esto crea `config.md`.
 3. Instala XMRig si aún no lo tienes (ver más abajo) y ejecuta `python3 src/minar.py`.
 
-Nota: hoy en día `minar.py` solo sabe arrancar el minado de Monero (XMR).
-Si el formulario recomienda otra moneda, `config.md` se genera igual,
-pero tendrás que pedir que se añada el motor de minado de esa moneda
-antes de poder arrancarla de verdad.
+Nota: hoy en día `minar.py` ya sabe arrancar el minado de Monero (XMR),
+Wownero (WOW), Zephyr (ZEPH), Salvium (SAL) y Raptoreum (RTM) — todas
+usan el mismo programa de minado, XMRig. Si el formulario recomienda
+alguna otra moneda de la lista, `config.md` se genera igual, pero
+tendrás que pedir que se añada su motor de minado (uno distinto de
+XMRig) antes de poder arrancarla de verdad.
 
 ### Opción B: a mano
 

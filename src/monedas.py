@@ -15,8 +15,8 @@ Cada moneda incluye:
   con el tiempo (crece un "libro de datos" llamado DAG).
 - motor: el programa externo que haría el minado de verdad.
 - soportado_por_minar_hoy: si `src/minar.py` ya sabe arrancar esta moneda
-  hoy. Ahora mismo solo Monero. Añadir las demás variantes de RandomX es
-  sencillo (mismo motor, xmrig, solo cambia el pool); las de otros
+  hoy. Hoy: Monero, Wownero, Zephyr, Salvium y Raptoreum (las 5 que usan
+  xmrig, ya sea con RandomX o con GhostRider). Las de otros
   algoritmos necesitarían instalar y controlar otro programa de minado,
   lo cual es un paso futuro a propósito, no de esta primera versión.
 - orden_respaldo: posición en un ranking de ingresos aproximado, por si
@@ -39,7 +39,7 @@ MONEDAS_CPU = {
         "algoritmo": "RandomX (variante rx/wow)",
         "tipo": "cpu",
         "motor": "xmrig",
-        "soportado_por_minar_hoy": False,
+        "soportado_por_minar_hoy": True,
         "orden_respaldo": 4,
     },
     "ZEPH": {
@@ -47,7 +47,7 @@ MONEDAS_CPU = {
         "algoritmo": "RandomX (fork)",
         "tipo": "cpu",
         "motor": "xmrig",
-        "soportado_por_minar_hoy": False,
+        "soportado_por_minar_hoy": True,
         "orden_respaldo": 3,
     },
     "SAL": {
@@ -55,7 +55,7 @@ MONEDAS_CPU = {
         "algoritmo": "RandomX (fork)",
         "tipo": "cpu",
         "motor": "xmrig",
-        "soportado_por_minar_hoy": False,
+        "soportado_por_minar_hoy": True,
         "orden_respaldo": 5,
     },
     "TALE": {
@@ -72,7 +72,7 @@ MONEDAS_CPU = {
         "algoritmo": "GhostRider",
         "tipo": "cpu",
         "motor": "xmrig (soporte GhostRider)",
-        "soportado_por_minar_hoy": False,
+        "soportado_por_minar_hoy": True,
         "orden_respaldo": 2,
     },
     "DERO": {

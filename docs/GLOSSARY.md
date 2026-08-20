@@ -22,8 +22,14 @@ Términos técnicos usados en este proyecto, explicados en una línea.
   (los cálculos que consiguen la recompensa). Nuestros scripts no minan
   por sí mismos: solo configuran y arrancan este programa. Cada
   algoritmo necesita un motor compatible (XMRig, T-Rex, lolMiner...).
-- **XMRig**: el motor de minado que usa este proyecto para Monero (y que
-  serviría para otras monedas de la familia RandomX).
+- **XMRig**: el motor de minado que usa este proyecto para Monero y para
+  las demás monedas que ya soporta (Wownero, Zephyr, Salvium, Raptoreum).
+- **Comisión del desarrollador (dev fee)**: un pequeño porcentaje del
+  tiempo de minado que algunos programas de minado gratuitos destinan
+  automáticamente a quien creó el programa, en vez de a tu wallet. Reduce
+  un poco el ingreso real.
+- **GhostRider**: el algoritmo de minado que usa Raptoreum. XMRig lo
+  soporta de forma oficial, igual que RandomX.
 - **RandomX**: el algoritmo de minado que usa Monero, diseñado para
   funcionar bien en procesadores normales (CPU) en vez de necesitar
   hardware especial.

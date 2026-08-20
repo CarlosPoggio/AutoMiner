@@ -29,9 +29,14 @@ class TestCatalogoMonedas(unittest.TestCase):
         ordenes_gpu = [d["orden_respaldo"] for d in monedas.MONEDAS_GPU.values()]
         self.assertEqual(len(ordenes_gpu), len(set(ordenes_gpu)))
 
-    def test_solo_xmr_soportado_por_minar_hoy(self):
-        soportadas = [s for s, d in monedas.TODAS_LAS_MONEDAS.items() if d["soportado_por_minar_hoy"]]
-        self.assertEqual(soportadas, ["XMR"])
+    def test_monedas_soportadas_hoy_son_las_que_usan_xmrig(self):
+        soportadas = {s for s, d in monedas.TODAS_LAS_MONEDAS.items() if d["soportado_por_minar_hoy"]}
+        self.assertEqual(soportadas, {"XMR", "WOW", "ZEPH", "SAL", "RTM"})
+        # Todas las soportadas hoy deben estar también en minar.py.
+        import minar
+
+        for simbolo in soportadas:
+            self.assertIsNotNone(minar.resolver_moneda(simbolo), msg=simbolo)
 
 
 class TestRecomendador(unittest.TestCase):

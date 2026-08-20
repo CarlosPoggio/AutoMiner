@@ -17,7 +17,9 @@ Módulos en `src/`: `hardware.py` (detecta CPU/GPU), `monedas.py`
 (catálogo de monedas de CPU y GPU), `ingresos.py` (ranking de ingresos,
 en vivo o de reserva), `recomendador.py` (junta hardware + catálogo +
 ingresos), `config_writer.py` (escribe `config.md`), `formulario.py` (la
-ventana), `minar.py` (arranca el minado de verdad).
+ventana), `minar.py` (arranca el minado de verdad; hoy sabe hacerlo para
+XMR, WOW, ZEPH, SAL y RTM, todas con el motor XMRig — ver
+`docs/DECISIONS.md` sobre qué falta para las demás monedas del catálogo).
 
 ## Comandos
 

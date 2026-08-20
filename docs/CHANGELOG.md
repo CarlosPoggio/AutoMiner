@@ -1,5 +1,22 @@
 # Historial de sesiones
 
+## 2026-08-20 — minar.py ya arranca 5 monedas (no solo Monero)
+
+- Investigados el pool y la variante de algoritmo correctos para
+  Wownero (WOW), Zephyr (ZEPH), Salvium (SAL) y Raptoreum (RTM), todas
+  minables con el mismo motor ya usado (XMRig).
+- Se añadieron las 4 a `src/minar.py` (`MONEDAS_SOPORTADAS`) y se marcó
+  `soportado_por_minar_hoy: True` para ellas en `src/monedas.py`.
+- Se añadió soporte para argumentos extra por moneda (`extra_args`), que
+  usa Raptoreum para conectarse por TLS a su pool.
+- Se añadieron 6 pruebas nuevas (28 en total en `tests/test_minar.py` +
+  las del formulario), todas en verde, y se comprobó a mano con
+  `--dry-run`-style que el comando generado para cada moneda es correcto.
+- Quedan pendientes (necesitan un motor de minado distinto a XMRig, y no
+  se ha podido probar nada de GPU en este entorno sin tarjeta gráfica):
+  Dero, Verus Coin, Xelis, Talecoin y las 15 monedas de GPU. Se abordarán
+  una a una cuando el usuario diga cuál quiere usar (ver DECISIONS.md).
+
 ## 2026-08-20 — Formulario gráfico que rellena config.md
 
 - Se investigaron las criptomonedas más habituales de minado con CPU (9,
