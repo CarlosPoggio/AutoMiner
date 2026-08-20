@@ -145,6 +145,72 @@ y lista de variantes RandomX). Los pools por defecto pueden cambiar con
 el tiempo; si alguno deja de funcionar, se puede indicar otro distinto
 añadiendo una línea `pool: otro-servidor:puerto` en `config.md`.
 
+## 2026-08-20 — Por qué no programamos nuestro propio motor de minado
+
+Preguntaste si, para evitar la comisión del desarrollador, podíamos
+construir nuestro propio programa de minado. Es una idea razonable, pero
+la respuesta es que no compensa, por dos motivos:
+
+1. **Es un proyecto enorme por sí mismo.** Cada algoritmo (RandomX,
+   KawPow, kHeavyHash...) es un cálculo matemático muy específico que
+   hay que programar y optimizar para que aproveche bien la tarjeta
+   gráfica o el procesador. Los programas que usamos (XMRig, kawpowminer,
+   lolMiner) son el resultado de años de trabajo de gente especializada
+   en esto. Reproducirlo nosotros, además de llevar mucho más tiempo del
+   que tiene sentido invertir aquí, probablemente saldría peor
+   optimizado — y un programa un poco menos eficiente te haría perder
+   más dinero en electricidad del que ahorrarías en comisión.
+2. **A veces ya existe la alternativa gratuita, sin tener que
+   programarla.** Al investigar Ravencoin encontré `kawpowminer`, un
+   programa de código abierto y sin ninguna comisión, mantenido por la
+   propia comunidad de Ravencoin — así que ahí no hace falta pagar nada
+   ni construir nada. Para Kaspa y Alephium sí existen "mineros
+   oficiales" de código abierto de los propios creadores de la moneda,
+   pero están pensados para minar en solitario contra tu propio nodo
+   completo (mucho más complicado de mantener, y minar en solitario casi
+   nunca encuentra recompensa con un solo ordenador); para conectarse a
+   un pool público de forma sencilla, la opción fiable es lolMiner, con
+   una comisión pequeña (0,75%).
+
+Además, algo importante que aprendí investigando esto: **XMRig, el
+motor que ya usábamos, también tiene una comisión por defecto (1%)**,
+aunque es ajustable porque es de código abierto (se puede bajar con
+`donate_level: N` en `config.md`). No es que XMRig fuera gratis y las
+demás no — la diferencia real es entre motores de código abierto (donde
+tú puedes ver y cambiar la comisión) y motores de código cerrado como
+lolMiner (donde la comisión es fija, pero suele ser pequeña y el
+programa está muy bien optimizado).
+
+## 2026-08-20 — Implementadas 3 monedas más de GPU (RVN, KAS, ALPH)
+
+Pediste las 3 monedas de CPU y las de GPU con mayor ingreso estimado.
+Las 3 de CPU con mayor ingreso (Monero, Raptoreum, Zephyr) ya estaban
+implementadas desde la sesión anterior. Para GPU, implementé las 3
+primeras del ranking:
+
+- **Ravencoin (RVN)**: motor `kawpowminer`, código abierto, 0% de
+  comisión. Fuente: RavenMiner (pool y comando) y minerstat (comisión).
+- **Kaspa (KAS)**: motor `lolMiner`, 0,75% de comisión. Fuente: HeroMiners
+  (pool) y el README oficial de lolMiner (comando y tabla de comisiones).
+- **Alephium (ALPH)**: motor `lolMiner`, 0,75% de comisión. Mismas
+  fuentes que Kaspa.
+
+Estas tres son técnicamente distintas de las 5 de CPU: cada una necesita
+un programa de minado distinto (por eso se creó `src/motores.py`, un
+"registro" de motores que sabe encontrar cada ejecutable y construir su
+comando concreto). El código está escrito y probado con un ejecutable de
+prueba (igual que se hizo con XMRig), pero **nunca se ha ejecutado
+contra una tarjeta gráfica real ni un pool real**, porque este entorno de
+trabajo no tiene GPU. Lo dejo hecho para que lo pruebes tú en tu propio
+ordenador; en `monedas.py`, en el formulario (icono 🧪) y en el README
+queda marcado como "sin confirmar" hasta que alguien lo pruebe de verdad
+y lo confirme.
+
+Quedan pendientes, por orden de ingreso estimado: Ergo (ERG), Ethereum
+Classic (ETC), Conflux (CFX)... y del lado de CPU, Dero (DERO), Verus
+Coin (VRSC) y Xelis (XEL). Se pueden ir añadiendo de la misma forma
+cuando se necesiten.
+
 ## 2026-08-20 — El ejecutable de XMRig no se guarda en el repositorio
 
 XMRig es un programa grande y distinto para cada sistema operativo

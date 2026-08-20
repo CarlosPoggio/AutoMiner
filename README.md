@@ -13,18 +13,34 @@ solo tu wallet y la moneda en un fichero de texto.
 2. Escribe tu wallet y pulsa "Guardar configuración". Esto crea `config.md`.
 3. Instala XMRig si aún no lo tienes (ver más abajo) y ejecuta `python3 src/minar.py`.
 
-Nota: hoy en día `minar.py` ya sabe arrancar el minado de Monero (XMR),
-Wownero (WOW), Zephyr (ZEPH), Salvium (SAL) y Raptoreum (RTM) — todas
-usan el mismo programa de minado, XMRig. Si el formulario recomienda
-alguna otra moneda de la lista, `config.md` se genera igual, pero
-tendrás que pedir que se añada su motor de minado (uno distinto de
-XMRig) antes de poder arrancarla de verdad.
+Hoy en día `minar.py` ya sabe arrancar 8 monedas:
+
+| Moneda | Tipo | Motor | Comisión | Probado con hardware real |
+|---|---|---|---|---|
+| Monero (XMR) | CPU | XMRig | 1% (ajustable) | ✅ |
+| Wownero (WOW) | CPU | XMRig | 1% (ajustable) | ✅ |
+| Zephyr (ZEPH) | CPU | XMRig | 1% (ajustable) | ✅ |
+| Salvium (SAL) | CPU | XMRig | 1% (ajustable) | ✅ |
+| Raptoreum (RTM) | CPU | XMRig | 1% (ajustable) | ✅ |
+| Ravencoin (RVN) | GPU | kawpowminer | 0% | 🧪 sin confirmar |
+| Kaspa (KAS) | GPU | lolMiner | 0,75% | 🧪 sin confirmar |
+| Alephium (ALPH) | GPU | lolMiner | 0,75% | 🧪 sin confirmar |
+
+"Sin confirmar" significa: el comando que genera `minar.py` está
+comprobado (con un programa de prueba), pero nunca se ha ejecutado
+contra una tarjeta gráfica real, porque se desarrolló en un entorno sin
+GPU. Pruébalo en tu ordenador y cuenta qué tal ha ido.
+
+Si el formulario recomienda alguna otra moneda de la lista (no incluida
+arriba), `config.md` se genera igual, pero tendrás que pedir que se
+añada su motor de minado antes de poder arrancarla de verdad.
 
 ### Opción B: a mano
 
-1. Instala XMRig (el programa que hace el minado de verdad). Descárgalo
-   desde la página oficial del proyecto XMRig y colócalo en tu `PATH`, o
-   copia el ejecutable dentro de la carpeta `bin/` de este proyecto.
+1. Instala el motor de minado que necesite tu moneda (ver tabla arriba;
+   XMRig, kawpowminer o lolMiner) y colócalo en tu `PATH`, o copia el
+   ejecutable dentro de la carpeta `bin/` de este proyecto (ver
+   `bin/LEEME.md`).
 2. Copia `config.example.md` como `config.md` y rellena tu wallet y la
    moneda (por ahora: `XMR`).
 3. Ejecuta:

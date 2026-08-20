@@ -6,32 +6,38 @@ Cómo funciona (en palabras simples):
 1. Lee un fichero de texto (por defecto config.md) donde escribes tu
    wallet y la moneda que quieres minar.
 2. Comprueba que los datos tengan sentido.
-3. Busca el programa que hace el minado de verdad (XMRig) en tu ordenador.
+3. Busca en tu ordenador el programa que hace el minado de verdad (el
+   "motor"; distinto según la moneda, ver src/motores.py).
 4. Lo arranca con los datos que escribiste.
 
-Este script NO reinventa el minado desde cero: usa XMRig por debajo,
-que es el programa estándar y de confianza que usa la comunidad para
-minar monedas de la familia RandomX (la más conocida es Monero / XMR) y,
-desde esta versión, también GhostRider (Raptoreum), que XMRig soporta de
-forma oficial. Ver docs/DECISIONS.md para la explicación de por qué se
-eligió así, y para las fuentes de cada pool por defecto.
+Este script NO reinventa el minado desde cero: usa motores de minado ya
+existentes y de confianza (ver src/motores.py). Para las monedas de CPU
+usa XMRig (RandomX y GhostRider). Para las de GPU usa kawpowminer
+(gratuito, código abierto) o lolMiner (gratuito, con una pequeña
+comisión del 0,75% — ver docs/DECISIONS.md sobre por qué no se programó
+un motor propio). Ver docs/DECISIONS.md para las fuentes de cada pool
+por defecto.
 """
 
 import argparse
 import re
-import shutil
 import subprocess
 import sys
 from pathlib import Path
 
+import motores
+
 # Monedas soportadas en esta primera versión.
 # "pool" es el servidor compartido al que se conecta tu ordenador para
 # minar en grupo con otras personas (minar en solitario casi nunca
-# compensa). "algo" es el nombre técnico del algoritmo de minado.
+# compensa). "algo" es el nombre técnico del algoritmo de minado, en el
+# formato que espera el motor concreto. "motor" indica qué programa (de
+# src/motores.py) arranca de verdad el minado.
 MONEDAS_SOPORTADAS = {
     "XMR": {
         "nombre": "Monero",
         "algo": "rx/0",
+        "motor": "xmrig",
         "pool_por_defecto": "pool.supportxmr.com:3333",
         "wallet_regex": r"^[48][0-9A-Za-z]{94}$",
     },
@@ -41,6 +47,7 @@ MONEDAS_SOPORTADAS = {
     "WOW": {
         "nombre": "Wownero",
         "algo": "rx/wow",
+        "motor": "xmrig",
         "pool_por_defecto": "wownero.ingest.cryptoknight.cc:50901",
         # Prefijo de dirección de Wownero: "Wo3...". Es orientativo: si tu
         # wallet es correcta pero distinta, el script solo avisa, no bloquea.
@@ -49,12 +56,14 @@ MONEDAS_SOPORTADAS = {
     "ZEPH": {
         "nombre": "Zephyr Protocol",
         "algo": "rx/0",
+        "motor": "xmrig",
         "pool_por_defecto": "stratum.ravenminer.com:4000",
         "wallet_regex": r"^ZEPHYR[1-9A-HJ-NP-Za-km-z]{90,105}$",
     },
     "SAL": {
         "nombre": "Salvium",
         "algo": "rx/0",
+        "motor": "xmrig",
         "pool_por_defecto": "de.salvium.herominers.com:1228",
         # No se encontró un prefijo fiable documentado; se acepta un rango
         # amplio de longitud en vez de arriesgar un aviso incorrecto.
@@ -63,9 +72,34 @@ MONEDAS_SOPORTADAS = {
     "RTM": {
         "nombre": "Raptoreum",
         "algo": "gr",
+        "motor": "xmrig",
         "pool_por_defecto": "rtm.suprnova.cc:4273",
         "extra_args": ["--tls"],
         "wallet_regex": r"^R[1-9A-HJ-NP-Za-km-z]{33}$",
+    },
+    "RVN": {
+        "nombre": "Ravencoin",
+        "algo": "kawpow",
+        "motor": "kawpowminer",
+        "pool_por_defecto": "stratum.ravenminer.com:3838",
+        "wallet_regex": r"^R[1-9A-HJ-NP-Za-km-z]{33}$",
+        "gpu": True,
+    },
+    "KAS": {
+        "nombre": "Kaspa",
+        "algo": "KASPA",
+        "motor": "lolminer",
+        "pool_por_defecto": "de.kaspa.herominers.com:1206",
+        "wallet_regex": r"^kaspa:[a-z0-9]{50,80}$",
+        "gpu": True,
+    },
+    "ALPH": {
+        "nombre": "Alephium",
+        "algo": "ALEPH",
+        "motor": "lolminer",
+        "pool_por_defecto": "de.alephium.herominers.com:1199",
+        "wallet_regex": r"^[1-9A-HJ-NP-Za-km-z]{44,58}$",
+        "gpu": True,
     },
 }
 
@@ -130,33 +164,17 @@ def validar(datos: dict) -> tuple[str, str, dict]:
     return wallet, moneda, datos
 
 
-def encontrar_xmrig(raiz_proyecto: Path) -> str | None:
-    """Busca xmrig instalado en el sistema o en la carpeta bin/ del proyecto."""
-    en_path = shutil.which("xmrig")
-    if en_path:
-        return en_path
-    local = raiz_proyecto / "bin" / "xmrig"
-    if local.exists():
-        return str(local)
-    local_exe = raiz_proyecto / "bin" / "xmrig.exe"
-    if local_exe.exists():
-        return str(local_exe)
-    return None
+def encontrar_motor(moneda: str, raiz_proyecto: Path) -> str | None:
+    """Busca el ejecutable del motor que necesita esta moneda (en el
+    sistema o en la carpeta bin/ del proyecto)."""
+    info = MONEDAS_SOPORTADAS[moneda]
+    return motores.encontrar_motor(info["motor"], raiz_proyecto)
 
 
-def construir_comando(xmrig_path: str, wallet: str, moneda: str, datos: dict) -> list[str]:
+def construir_comando(bin_path: str, wallet: str, moneda: str, datos: dict) -> list[str]:
     info = MONEDAS_SOPORTADAS[moneda]
     pool = datos.get("pool", info["pool_por_defecto"])
-    cmd = [
-        xmrig_path,
-        "-o", pool,
-        "-u", wallet,
-        "-p", "x",
-        "--algo", info["algo"],
-    ]
-    hilos = datos.get("hilos") or datos.get("threads")
-    if hilos:
-        cmd += ["-t", str(hilos)]
+    cmd = motores.construir_comando(info["motor"], bin_path, wallet, pool, info["algo"], datos)
     cmd += info.get("extra_args", [])
     return cmd
 
@@ -183,19 +201,24 @@ def main():
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
-    xmrig_path = encontrar_xmrig(raiz_proyecto)
-    if xmrig_path is None:
+    nombre_motor = MONEDAS_SOPORTADAS[moneda]["motor"]
+    bin_path = encontrar_motor(moneda, raiz_proyecto)
+    if bin_path is None:
+        nombres = motores.MOTORES[nombre_motor]["nombres_binario"]
         print(
-            "No encuentro XMRig instalado. Sigue las instrucciones de "
-            "docs/GLOSSARY.md / README para instalarlo y vuelve a intentarlo.",
+            f"No encuentro el motor de minado '{nombre_motor}' instalado "
+            f"(busco: {', '.join(nombres)}). Descárgalo, ponlo en tu PATH "
+            f"o en la carpeta bin/ de este proyecto, y vuelve a intentarlo.",
             file=sys.stderr,
         )
         sys.exit(1)
 
-    cmd = construir_comando(xmrig_path, wallet, moneda, datos)
+    cmd = construir_comando(bin_path, wallet, moneda, datos)
 
+    comision = motores.MOTORES[nombre_motor]["comision_pct"]
     wallet_oculta = f"{wallet[:6]}...{wallet[-4:]}" if len(wallet) > 12 else wallet
     print(f"Moneda: {MONEDAS_SOPORTADAS[moneda]['nombre']} ({moneda})")
+    print(f"Motor: {nombre_motor}" + (f" (comisión del {comision}%)" if comision else " (sin comisión)"))
     print(f"Wallet: {wallet_oculta}")
     print(f"Comando: {' '.join(cmd)}")
 

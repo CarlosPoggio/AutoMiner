@@ -1,11 +1,19 @@
-# Carpeta para XMRig
+# Carpeta para los motores de minado
 
-Si no quieres instalar XMRig en todo tu sistema, puedes colocar aquí el
-ejecutable descargado (`xmrig` en Linux/Mac, `xmrig.exe` en Windows) y el
-script lo encontrará automáticamente.
+Si no quieres instalar el programa de minado en todo tu sistema, puedes
+colocar aquí el ejecutable descargado y `minar.py` lo encontrará
+automáticamente. Según la moneda que uses, hace falta uno de estos:
 
-Descárgalo desde la página oficial del proyecto XMRig (busca "XMRig
-releases" en GitHub) y elige la versión para tu sistema operativo.
+- **xmrig** (Monero, Wownero, Zephyr, Salvium, Raptoreum): descárgalo
+  desde la página oficial del proyecto XMRig en GitHub ("xmrig/xmrig",
+  sección Releases).
+- **kawpowminer** (Ravencoin): descárgalo desde
+  github.com/RavenCommunity/kawpowminer, sección Releases.
+- **lolMiner** (Kaspa, Alephium): descárgalo desde
+  github.com/Lolliedieb/lolMiner-releases, sección Releases.
 
-Esta carpeta no sube el ejecutable a git (son ficheros grandes y distintos
-para cada sistema operativo).
+En Windows el nombre del fichero debe terminar en `.exe` (por ejemplo
+`xmrig.exe`); en Linux/Mac, sin extensión.
+
+Esta carpeta no sube los ejecutables a git (son ficheros grandes y
+distintos para cada sistema operativo).

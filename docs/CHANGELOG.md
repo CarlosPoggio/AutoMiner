@@ -1,5 +1,29 @@
 # Historial de sesiones
 
+## 2026-08-20 — 3 monedas de GPU más (Ravencoin, Kaspa, Alephium)
+
+- Se creó `src/motores.py`: un registro que sabe encontrar y arrancar
+  distintos programas de minado (antes solo existía para XMRig).
+- Se investigaron y añadieron las 3 monedas de GPU con mayor ingreso
+  estimado: Ravencoin (motor kawpowminer, código abierto, 0% comisión),
+  Kaspa y Alephium (motor lolMiner, 0,75% comisión). Las 3 de CPU con
+  mayor ingreso ya estaban hechas de la sesión anterior.
+- Se corrigió un dato: XMRig sí tiene una comisión por defecto (1%),
+  ajustable con la nueva opción `donate_level` en config.md. Antes el
+  catálogo decía que no tenía comisión, lo cual era incorrecto.
+- `monedas.py` y el formulario ahora marcan cada moneda con un icono:
+  ✅ implementada y probada en ese tipo de hardware, 🧪 implementada
+  pero sin confirmar en GPU real, 🚧 todavía sin implementar. El
+  fichero `config.md` generado también incluye ese aviso como comentario.
+- Se añadieron 11 pruebas nuevas (39 en total), todas en verde, y se
+  comprobó a mano el comando exacto que se generaría para las 3 monedas
+  nuevas con un ejecutable de prueba (kawpowminer/lolMiner no se pudieron
+  probar contra hardware real: este entorno no tiene GPU).
+- Actualizados README.md, CLAUDE.md, docs/DECISIONS.md,
+  docs/GLOSSARY.md y config.example.md.
+- Pendiente (siguiente candidata por ingreso si se quiere seguir):
+  Ergo (ERG) en GPU; Dero (DERO) en CPU.
+
 ## 2026-08-20 — minar.py ya arranca 5 monedas (no solo Monero)
 
 - Investigados el pool y la variante de algoritmo correctos para

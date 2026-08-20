@@ -29,14 +29,18 @@ class TestCatalogoMonedas(unittest.TestCase):
         ordenes_gpu = [d["orden_respaldo"] for d in monedas.MONEDAS_GPU.values()]
         self.assertEqual(len(ordenes_gpu), len(set(ordenes_gpu)))
 
-    def test_monedas_soportadas_hoy_son_las_que_usan_xmrig(self):
+    def test_monedas_soportadas_hoy_coinciden_con_minar(self):
         soportadas = {s for s, d in monedas.TODAS_LAS_MONEDAS.items() if d["soportado_por_minar_hoy"]}
-        self.assertEqual(soportadas, {"XMR", "WOW", "ZEPH", "SAL", "RTM"})
+        self.assertEqual(soportadas, {"XMR", "WOW", "ZEPH", "SAL", "RTM", "RVN", "KAS", "ALPH"})
         # Todas las soportadas hoy deben estar también en minar.py.
         import minar
 
         for simbolo in soportadas:
             self.assertIsNotNone(minar.resolver_moneda(simbolo), msg=simbolo)
+
+    def test_monedas_gpu_soportadas_tienen_comision_documentada(self):
+        for simbolo in ("RVN", "KAS", "ALPH"):
+            self.assertIn("comision_pct", monedas.MONEDAS_GPU[simbolo], msg=simbolo)
 
 
 class TestRecomendador(unittest.TestCase):
@@ -135,10 +139,18 @@ class TestConfigWriter(unittest.TestCase):
     def test_guardar_config_moneda_no_soportada_incluye_aviso(self):
         with tempfile.TemporaryDirectory() as d:
             ruta = Path(d) / "config.md"
+            config_writer.guardar_config(ruta, "mi-wallet-123", "ERG", "2026-08-20")
+            contenido = ruta.read_text(encoding="utf-8")
+        self.assertIn("moneda: ERG", contenido)
+        self.assertIn("Aviso", contenido)
+
+    def test_guardar_config_moneda_gpu_soportada_incluye_aviso_sin_confirmar(self):
+        with tempfile.TemporaryDirectory() as d:
+            ruta = Path(d) / "config.md"
             config_writer.guardar_config(ruta, "mi-wallet-123", "RVN", "2026-08-20")
             contenido = ruta.read_text(encoding="utf-8")
         self.assertIn("moneda: RVN", contenido)
-        self.assertIn("Aviso", contenido)
+        self.assertIn("nunca contra una tarjeta gráfica real", contenido)
 
     def test_config_generado_es_compatible_con_minar_parsear(self):
         import minar

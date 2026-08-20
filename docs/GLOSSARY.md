@@ -30,6 +30,17 @@ Términos técnicos usados en este proyecto, explicados en una línea.
   un poco el ingreso real.
 - **GhostRider**: el algoritmo de minado que usa Raptoreum. XMRig lo
   soporta de forma oficial, igual que RandomX.
+- **kawpowminer**: el motor de minado que usa este proyecto para
+  Ravencoin. Código abierto, sin comisión.
+- **lolMiner**: el motor de minado que usa este proyecto para Kaspa y
+  Alephium. Gratuito, pero de código cerrado y con una pequeña comisión
+  del 0,75%.
+- **Minar en solitario (solo mining)**: minar sin unirte a un pool,
+  conectándote directamente a la red de la moneda. Con un solo
+  ordenador, casi nunca se llega a encontrar recompensa; por eso este
+  proyecto usa pools públicos por defecto.
+- **Worker**: un nombre que le das a tu ordenador dentro de un pool,
+  útil si tienes varios minando a la vez (por defecto, "rig1").
 - **RandomX**: el algoritmo de minado que usa Monero, diseñado para
   funcionar bien en procesadores normales (CPU) en vez de necesitar
   hardware especial.

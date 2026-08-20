@@ -67,6 +67,38 @@ class TestMinar(unittest.TestCase):
         wallet, moneda, _ = minar.validar({"wallet": "RUZb2pp45x5qAjbS3usXAGW8BzK1fvKJBo", "moneda": "RTM"})
         self.assertEqual(moneda, "RTM")
 
+    def test_rvn_kas_alph_estan_soportadas(self):
+        for simbolo in ("RVN", "KAS", "ALPH"):
+            self.assertIn(simbolo, minar.MONEDAS_SOPORTADAS, msg=simbolo)
+
+    def test_construir_comando_ravencoin_usa_kawpowminer(self):
+        datos = {"wallet": "Rwallet", "moneda": "RVN"}
+        cmd = minar.construir_comando("kawpowminer", "Rwallet", "RVN", datos)
+        self.assertEqual(cmd, ["kawpowminer", "-P", "stratum+tcp://Rwallet.rig1@stratum.ravenminer.com:3838"])
+
+    def test_construir_comando_kaspa_usa_lolminer_algo_kaspa(self):
+        datos = {"wallet": "kaspa:qwallet", "moneda": "KAS"}
+        cmd = minar.construir_comando("lolMiner", "kaspa:qwallet", "KAS", datos)
+        self.assertIn("--algo", cmd)
+        self.assertIn("KASPA", cmd)
+        self.assertIn("de.kaspa.herominers.com:1206", cmd)
+
+    def test_construir_comando_alephium_usa_lolminer_algo_aleph(self):
+        datos = {"wallet": "alphwallet", "moneda": "ALPH"}
+        cmd = minar.construir_comando("lolMiner", "alphwallet", "ALPH", datos)
+        self.assertIn("ALEPH", cmd)
+        self.assertIn("de.alephium.herominers.com:1199", cmd)
+
+    def test_construir_comando_xmrig_respeta_donate_level(self):
+        datos = {"wallet": "4wallet", "moneda": "XMR", "donate_level": "0"}
+        cmd = minar.construir_comando("xmrig", "4wallet", "XMR", datos)
+        self.assertIn("--donate-level", cmd)
+        self.assertIn("0", cmd)
+
+    def test_motor_de_moneda_no_soportada_da_error_util(self):
+        with self.assertRaises(KeyError):
+            minar.MONEDAS_SOPORTADAS["ERG"]
+
 
 if __name__ == "__main__":
     unittest.main()

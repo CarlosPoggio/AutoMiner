@@ -9,17 +9,31 @@ frase sencilla y regístralas en `docs/DECISIONS.md`.
 Herramienta personal para iniciar el minado de criptomonedas (uso propio,
 con su propia wallet y su propio ordenador). Un fichero de texto
 (`config.md`) guarda la wallet y la moneda; el script `src/minar.py` lee
-ese fichero y arranca XMRig con esos datos. `src/formulario.py` es una
-ventana muy sencilla (Tkinter) que analiza el hardware del ordenador,
-muestra qué monedas se pueden minar con él y genera `config.md` por ti.
+ese fichero y arranca el motor de minado correcto con esos datos.
+`src/formulario.py` es una ventana muy sencilla (Tkinter) que analiza el
+hardware del ordenador, muestra qué monedas se pueden minar con él y
+genera `config.md` por ti.
 
 Módulos en `src/`: `hardware.py` (detecta CPU/GPU), `monedas.py`
-(catálogo de monedas de CPU y GPU), `ingresos.py` (ranking de ingresos,
-en vivo o de reserva), `recomendador.py` (junta hardware + catálogo +
-ingresos), `config_writer.py` (escribe `config.md`), `formulario.py` (la
-ventana), `minar.py` (arranca el minado de verdad; hoy sabe hacerlo para
-XMR, WOW, ZEPH, SAL y RTM, todas con el motor XMRig — ver
-`docs/DECISIONS.md` sobre qué falta para las demás monedas del catálogo).
+(catálogo de monedas de CPU y GPU, con su comisión y si están
+implementadas), `motores.py` (sabe encontrar y arrancar cada programa de
+minado: xmrig, kawpowminer, lolMiner), `ingresos.py` (ranking de
+ingresos, en vivo o de reserva), `recomendador.py` (junta hardware +
+catálogo + ingresos), `config_writer.py` (escribe `config.md`),
+`formulario.py` (la ventana), `minar.py` (arranca el minado de verdad).
+
+Monedas soportadas hoy por `minar.py` (ver tabla completa en README.md):
+XMR, WOW, ZEPH, SAL, RTM (CPU, motor xmrig) y RVN, KAS, ALPH (GPU,
+motores kawpowminer/lolMiner). Las de GPU están implementadas y con
+tests, pero **nunca probadas contra una GPU real** (este entorno no
+tiene ninguna) — están marcadas como tal en `monedas.py`
+(`tipo == "gpu"` + `soportado_por_minar_hoy == True` implica "sin
+confirmar" por convención) y en la interfaz del formulario (icono 🧪).
+Añadir una moneda nueva que ya use un motor existente (mismo xmrig,
+kawpowminer o lolMiner) es sencillo; añadir una que necesite un motor
+distinto implica registrarlo primero en `motores.py`, investigando pool,
+formato de comando y comisión con fuentes fiables (ver
+`docs/DECISIONS.md` para el patrón a seguir).
 
 ## Comandos
 

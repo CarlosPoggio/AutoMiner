@@ -14,15 +14,29 @@ Cada moneda incluye:
   Es orientativo: en varios algoritmos este requisito sube poco a poco
   con el tiempo (crece un "libro de datos" llamado DAG).
 - motor: el programa externo que haría el minado de verdad.
-- soportado_por_minar_hoy: si `src/minar.py` ya sabe arrancar esta moneda
-  hoy. Hoy: Monero, Wownero, Zephyr, Salvium y Raptoreum (las 5 que usan
-  xmrig, ya sea con RandomX o con GhostRider). Las de otros
-  algoritmos necesitarían instalar y controlar otro programa de minado,
-  lo cual es un paso futuro a propósito, no de esta primera versión.
+- soportado_por_minar_hoy: si `src/minar.py` ya sabe construir el comando
+  para arrancar esta moneda. Hoy: Monero, Wownero, Zephyr, Salvium y
+  Raptoreum (CPU, motor xmrig) y Ravencoin, Kaspa y Alephium (GPU,
+  motores kawpowminer/lolMiner). El resto necesitaría instalar y
+  controlar otro programa de minado distinto: un paso futuro a
+  propósito, no de esta versión.
+- comision_pct: comisión aproximada del motor de minado (0 si es
+  gratuito de verdad, como xmrig con --donate-level 0 o kawpowminer).
+  Solo está rellena para las monedas ya soportadas.
 - orden_respaldo: posición en un ranking de ingresos aproximado, por si
   no hay conexión a internet para consultar datos en vivo (cuanto más
   bajo el número, mejor posición tenía el 2026-08-20).
 - riesgo: nota opcional si es una moneda pequeña/poco líquida.
+
+IMPORTANTE sobre las monedas de GPU ya soportadas (KAS, RVN, ALPH): el
+comando que genera minar.py para ellas está probado (con un ejecutable
+de prueba, ver docs/DECISIONS.md), pero nunca se ha ejecutado contra una
+tarjeta gráfica real ni un pool real, porque el entorno donde se
+desarrolló este proyecto no tiene GPU. Por convención, en el formulario
+y en la documentación, toda moneda con tipo "gpu" y
+soportado_por_minar_hoy=True se marca como "sin confirmar en hardware
+real" hasta que alguien la pruebe de verdad y lo confirme (entonces se
+puede añadir aquí un comentario con la fecha de confirmación).
 """
 
 MONEDAS_CPU = {
@@ -32,6 +46,7 @@ MONEDAS_CPU = {
         "tipo": "cpu",
         "motor": "xmrig",
         "soportado_por_minar_hoy": True,
+        "comision_pct": 1.0,
         "orden_respaldo": 1,
     },
     "WOW": {
@@ -40,6 +55,7 @@ MONEDAS_CPU = {
         "tipo": "cpu",
         "motor": "xmrig",
         "soportado_por_minar_hoy": True,
+        "comision_pct": 1.0,
         "orden_respaldo": 4,
     },
     "ZEPH": {
@@ -48,6 +64,7 @@ MONEDAS_CPU = {
         "tipo": "cpu",
         "motor": "xmrig",
         "soportado_por_minar_hoy": True,
+        "comision_pct": 1.0,
         "orden_respaldo": 3,
     },
     "SAL": {
@@ -56,6 +73,7 @@ MONEDAS_CPU = {
         "tipo": "cpu",
         "motor": "xmrig",
         "soportado_por_minar_hoy": True,
+        "comision_pct": 1.0,
         "orden_respaldo": 5,
     },
     "TALE": {
@@ -73,6 +91,7 @@ MONEDAS_CPU = {
         "tipo": "cpu",
         "motor": "xmrig (soporte GhostRider)",
         "soportado_por_minar_hoy": True,
+        "comision_pct": 1.0,
         "orden_respaldo": 2,
     },
     "DERO": {
@@ -103,8 +122,14 @@ MONEDAS_CPU = {
 }
 
 MONEDAS_GPU = {
-    "KAS": {"nombre": "Kaspa", "algoritmo": "kHeavyHash", "vram_min_gb": 2, "motor": "bzminer / lolMiner", "orden_respaldo": 1},
-    "RVN": {"nombre": "Ravencoin", "algoritmo": "KawPow", "vram_min_gb": 4, "motor": "T-Rex / gminer", "orden_respaldo": 3},
+    "KAS": {
+        "nombre": "Kaspa", "algoritmo": "kHeavyHash", "vram_min_gb": 2, "motor": "lolMiner",
+        "soportado_por_minar_hoy": True, "comision_pct": 0.75, "orden_respaldo": 1,
+    },
+    "RVN": {
+        "nombre": "Ravencoin", "algoritmo": "KawPow", "vram_min_gb": 4, "motor": "kawpowminer",
+        "soportado_por_minar_hoy": True, "comision_pct": 0.0, "orden_respaldo": 3,
+    },
     "ERG": {"nombre": "Ergo", "algoritmo": "Autolykos2", "vram_min_gb": 6, "motor": "lolMiner / T-Rex", "orden_respaldo": 4},
     "ETC": {"nombre": "Ethereum Classic", "algoritmo": "Etchash", "vram_min_gb": 6, "motor": "T-Rex / gminer", "orden_respaldo": 5},
     "FLUX": {"nombre": "Flux", "algoritmo": "ZelHash (Equihash 125,4)", "vram_min_gb": 4, "motor": "miniZ / lolMiner", "orden_respaldo": 8},
@@ -113,7 +138,10 @@ MONEDAS_GPU = {
     "BEAM": {"nombre": "Beam", "algoritmo": "BeamHash III", "vram_min_gb": 4, "motor": "lolMiner / gminer", "orden_respaldo": 10},
     "FIRO": {"nombre": "Firo", "algoritmo": "FiroPow", "vram_min_gb": 5, "motor": "T-Rex / gminer", "orden_respaldo": 7},
     "CFX": {"nombre": "Conflux", "algoritmo": "Octopus", "vram_min_gb": 6, "motor": "lolMiner / gminer", "orden_respaldo": 6},
-    "ALPH": {"nombre": "Alephium", "algoritmo": "Blake3", "vram_min_gb": 2, "motor": "bzminer / lolMiner", "orden_respaldo": 2},
+    "ALPH": {
+        "nombre": "Alephium", "algoritmo": "Blake3", "vram_min_gb": 2, "motor": "lolMiner",
+        "soportado_por_minar_hoy": True, "comision_pct": 0.75, "orden_respaldo": 2,
+    },
     "ZANO": {"nombre": "Zano", "algoritmo": "ProgPowZ", "vram_min_gb": 4, "motor": "gminer", "orden_respaldo": 12},
     "NEXA": {"nombre": "Nexa", "algoritmo": "NexaPow", "vram_min_gb": 2, "motor": "bzminer", "orden_respaldo": 13},
     "RXD": {"nombre": "Radiant", "algoritmo": "SHA512256d", "vram_min_gb": 2, "motor": "bzminer", "orden_respaldo": 14},

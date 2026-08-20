@@ -28,15 +28,20 @@ RAIZ_PROYECTO = Path(__file__).resolve().parent.parent
 
 
 def _etiqueta_opcion(opcion) -> str:
-    aviso = "" if opcion.soportado_por_minar_hoy else " · minado aún no implementado"
-    return f"[{opcion.tipo.upper()}] {opcion.nombre} ({opcion.simbolo}) — {opcion.algoritmo}{aviso}"
+    if not opcion.soportado_por_minar_hoy:
+        icono = "🚧"  # todavía no implementado en minar.py
+    elif opcion.confirmado_en_hardware_real:
+        icono = "✅"  # implementado y probado en este tipo de hardware
+    else:
+        icono = "🧪"  # implementado pero sin confirmar en una GPU real
+    return f"{icono} [{opcion.tipo.upper()}] {opcion.nombre} ({opcion.simbolo}) — {opcion.algoritmo}"
 
 
 class Formulario(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Configurar minado")
-        self.geometry("560x480")
+        self.geometry("560x540")
         self.resizable(False, False)
 
         self.gpu_manual_vram = tk.DoubleVar(value=0)
@@ -83,8 +88,16 @@ class Formulario(tk.Tk):
         self.combo_monedas.pack(anchor="w", pady=(2, 4))
         self.combo_monedas.bind("<<ComboboxSelected>>", lambda e: self._actualizar_avisos())
 
+        ttk.Label(
+            marco,
+            text="✅ lista y probada en este tipo de hardware   🧪 lista pero sin confirmar en GPU real   🚧 aún no implementada",
+            foreground="#555555", wraplength=520, justify="left",
+        ).pack(anchor="w", pady=(2, 6))
+
         self.lbl_aviso_soporte = ttk.Label(marco, foreground="#b45309", wraplength=520, justify="left")
         self.lbl_aviso_soporte.pack(anchor="w", pady=(0, 4))
+        self.lbl_aviso_comision = ttk.Label(marco, foreground="#555555", wraplength=520, justify="left")
+        self.lbl_aviso_comision.pack(anchor="w", pady=(0, 4))
         self.lbl_aviso_riesgo = ttk.Label(marco, foreground="#b91c1c", wraplength=520, justify="left")
         self.lbl_aviso_riesgo.pack(anchor="w", pady=(0, 8))
 
@@ -142,15 +155,34 @@ class Formulario(tk.Tk):
         opcion = self._opcion_seleccionada()
         if opcion is None:
             self.lbl_aviso_soporte.configure(text="")
+            self.lbl_aviso_comision.configure(text="")
             self.lbl_aviso_riesgo.configure(text="")
             return
+
         if not opcion.soportado_por_minar_hoy:
             self.lbl_aviso_soporte.configure(
-                text="⚠ minar.py aún no sabe arrancar esta moneda automáticamente. "
+                text="🚧 minar.py aún no sabe arrancar esta moneda automáticamente. "
                 "El fichero se generará igual; pide que se añada soporte cuando quieras usarla."
+            )
+        elif not opcion.confirmado_en_hardware_real:
+            self.lbl_aviso_soporte.configure(
+                text="🧪 El comando ya está implementado y probado con un ejecutable de "
+                "prueba, pero nunca se ha ejecutado contra una tarjeta gráfica real "
+                "(se hizo en un entorno sin GPU). Pruébalo tú y cuenta qué tal."
             )
         else:
             self.lbl_aviso_soporte.configure(text="")
+
+        if opcion.comision_pct is not None:
+            texto_comision = (
+                "sin comisión (motor de código abierto)"
+                if opcion.comision_pct == 0
+                else f"comisión del motor de minado: {opcion.comision_pct}%"
+            )
+            self.lbl_aviso_comision.configure(text=texto_comision)
+        else:
+            self.lbl_aviso_comision.configure(text="")
+
         self.lbl_aviso_riesgo.configure(text=f"⚠ {opcion.riesgo}" if opcion.riesgo else "")
 
     def _guardar(self):
