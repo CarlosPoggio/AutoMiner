@@ -29,9 +29,14 @@ ingresos, en vivo o de reserva), `recomendador.py` (junta hardware +
 catálogo + ingresos; `recomendar_cpu`/`recomendar_gpu` separan las
 opciones de cada componente), `config_writer.py` (escribe `config.md`
 en formato dual), `wallets_defecto.py` (lee `wallets.md`, ver más abajo),
-`formulario.py` (la ventana: solo muestra monedas ya minables, con la de
-mayor ingreso preseleccionada y la wallet rellenada sola si está en
-`wallets.md`; configuración + arranque + logs, todo en una sola app),
+`estimacion_ingreso.py` (calcula, con datos reales de dificultad de red
+y precio, cuánto se ganaría por hora a una velocidad de minado de
+referencia fija — no el hardware real del usuario, ver docstring del
+propio fichero para qué monedas tienen fuente verificada hoy y cuáles
+no), `formulario.py` (la ventana: solo muestra monedas ya minables, con
+la de mayor ingreso preseleccionada, la wallet rellenada sola si está
+en `wallets.md`, y la estimación de `estimacion_ingreso.py` bajo cada
+desplegable; configuración + arranque + logs, todo en una sola app),
 `minar.py` (parsea/valida `config.md`, sabe arrancar CPU y GPU a la vez
 como procesos concurrentes, e interpreta su salida en
 `interpretar_linea`).

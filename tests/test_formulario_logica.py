@@ -89,5 +89,36 @@ class TestFiltrarSoloSoportadas(unittest.TestCase):
         self.assertIsNone(recomendado)
 
 
+@unittest.skipUnless(TIENE_FORMULARIO, "tkinter no disponible en este entorno")
+class TestTextoEstimacion(unittest.TestCase):
+    def test_none_da_mensaje_neutro(self):
+        self.assertEqual(
+            formulario.texto_estimacion(None),
+            "Estimación no disponible ahora mismo",
+        )
+
+    def test_con_estimacion_incluye_moneda_usd_y_referencia(self):
+        from estimacion_ingreso import EstimacionReferencia
+        est = EstimacionReferencia(
+            simbolo="XMR", hashrate_referencia="1 kH/s",
+            moneda_por_hora=0.0143, usd_por_hora=1.20, fuente="test",
+        )
+        texto = formulario.texto_estimacion(est)
+        self.assertIn("XMR/hora", texto)
+        self.assertIn("$/hora", texto)
+        self.assertIn("1 kH/s", texto)
+        self.assertIn("no es la velocidad real", texto)
+
+    def test_valores_diminutos_no_se_muestran_como_cero(self):
+        from estimacion_ingreso import EstimacionReferencia
+        est = EstimacionReferencia(
+            simbolo="KAS", hashrate_referencia="1 GH/s",
+            moneda_por_hora=0.00026, usd_por_hora=7.5e-06, fuente="test",
+        )
+        texto = formulario.texto_estimacion(est)
+        # No debe quedar como "0.00 $": se usa notación adecuada al tamaño.
+        self.assertNotIn("0.00 $", texto)
+
+
 if __name__ == "__main__":
     unittest.main()

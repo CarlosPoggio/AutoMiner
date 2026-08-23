@@ -1,5 +1,29 @@
 # Historial de sesiones
 
+## 2026-08-23 (3) — Estimación de ingreso en €/hora (5 de 8 monedas)
+
+- Nuevo `src/estimacion_ingreso.py`: `estimar_referencia(simbolo)`
+  calcula moneda/hora y $/hora a una velocidad de minado de referencia
+  fija (no el hardware real del usuario), usando dificultad/hashrate de
+  red en vivo (supportxmr.com para XMR, herominers.com para SAL/ZEPH,
+  2miners.com para RVN, api.kaspa.org para KAS) y precio en vivo de
+  CoinGecko, cacheado 5 minutos en memoria.
+- WOW, RTM y ALPH quedan sin estimación a propósito: no se encontró una
+  fuente gratuita, en vivo y verificable con confianza para ellas (ver
+  cabecera de `estimacion_ingreso.py` y `docs/DECISIONS.md` para el
+  detalle por moneda). La app muestra "Estimación no disponible ahora
+  mismo" en vez de un número inventado.
+- `src/formulario.py`: nueva etiqueta bajo cada desplegable (CPU y GPU)
+  con la estimación de la moneda seleccionada; se recalcula al cambiar
+  de moneda, en un hilo de fondo (con cola + `after`, mismo patrón que
+  el log de minado) para no congelar la ventana, y descarta resultados
+  obsoletos si el usuario cambia de moneda antes de que llegue la
+  respuesta.
+- Añadidas 18 pruebas nuevas (112 en total): `test_estimacion_ingreso.py`
+  (con respuestas de ejemplo reales de cada API, todo mockeado) y
+  ampliado `test_formulario_logica.py`.
+- Actualizados README.md, CLAUDE.md y docs/DECISIONS.md.
+
 ## 2026-08-23 (2) — Solo monedas minables, wallets por defecto, y arreglo de un bug real de recomendación
 
 - `src/formulario.py`: los desplegables de CPU y GPU ahora solo muestran

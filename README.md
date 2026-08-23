@@ -42,6 +42,15 @@ falta, desde la página oficial del proyecto correspondiente en GitHub
    Si rellenas `wallets.md` (en la raíz del proyecto) con tus
    direcciones por defecto, el campo de wallet se rellena solo al
    elegir esa moneda — puedes cambiarlo a mano si quieres usar otra.
+   Bajo cada desplegable verás también una estimación tipo "≈ 0,014
+   XMR/hora ≈ 1,20 $/hora": es una referencia calculada con datos
+   reales de dificultad de red y precio actual, pero a una velocidad de
+   minado fija y redonda (no la de tu hardware exacto) — sirve para
+   comparar monedas entre sí, no como una promesa exacta de lo que vas
+   a ganar. Wownero, Raptoreum y Alephium todavía no tienen esta
+   estimación (no se encontró una fuente de datos fiable y gratuita
+   para ellas); en vez de inventar un número, se muestra "Estimación no
+   disponible ahora mismo".
 3. Pulsa "Comenzar a minar". La app guarda `config.md`, instala el
    motor que falte si hace falta, y arranca a minar — verás un registro
    en vivo traducido a lenguaje sencillo (conectado al pool, velocidad,

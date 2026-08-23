@@ -317,3 +317,56 @@ en la raíz del proyecto, con líneas `SIMBOLO: direccion`, y sí se sube a
 GitHub sin problema. El formulario lo lee al abrir y rellena el campo de
 wallet correspondiente en cuanto eliges esa moneda (si no hay wallet
 guardada para ella, el campo se queda vacío, como hasta ahora).
+
+## 2026-08-23 — Estimación de ingreso en €/hora: solo para las monedas con una fuente de datos real y verificada
+
+Pediste ver, junto a cada moneda, más o menos cuánto se ganaría por
+hora (en la moneda y en dólares). Para calcular eso de verdad hacen
+falta dos datos por moneda: el precio actual, y la dificultad/velocidad
+de la red (cuánta "competencia" hay para minar un bloque). Investigué
+las opciones:
+
+- **whattomine.com** (la web que ya se usaba para ordenar monedas por
+  ingreso) hoy no incluye ninguna de nuestras 5 monedas de CPU, y de las
+  3 de GPU solo Ravencoin. No sirve para esto.
+- **minerstat.com** tiene justo el dato que hace falta, pero ahora exige
+  crear una cuenta de desarrollador de pago — lo descarté, no encaja con
+  la idea de que esta app no te pida cuentas ni pagos externos.
+- La alternativa que sí funcionó: usar, moneda por moneda, la API
+  pública y gratuita del propio pool (o explorador oficial) que ya
+  usamos como servidor por defecto para minarla, más el precio actual de
+  **CoinGecko** (gratis, sin registro).
+
+Resultado, verificado con peticiones reales antes de dar nada por
+bueno: **5 de las 8 monedas tienen estimación real** (Monero vía
+supportxmr.com, Salvium y Zephyr vía sus pools en herominers.com,
+Ravencoin vía 2miners.com, Kaspa vía api.kaspa.org — fuentes exactas en
+la cabecera de `src/estimacion_ingreso.py`). Para las otras 3, decidí
+**no mostrar ningún número en vez de arriesgarme a que estuviera mal**:
+
+- **Wownero (WOW)**: no cotiza en CoinGecko (hay un token distinto con
+  el mismo símbolo "WOW" en otra red, que no es Wownero), así que no hay
+  un precio fiable de dónde partir.
+- **Raptoreum (RTM)**: no encontré una web pública y gratuita que diera
+  su dificultad de red en vivo y de forma fiable.
+- **Alephium (ALPH)**: su algoritmo (Blake3) es de una familia distinta
+  a las demás, y la única fuente encontrada daba una dificultad cuya
+  escala no pude verificar contra el hashrate real de la red — antes de
+  arriesgarme a una fórmula mal calculada (que te haría tomar una
+  decisión con un dato falso), preferí dejarla sin estimar.
+
+Esto es coherente con cómo se trató desde el principio la detección de
+hardware (ver más arriba, "Detección de hardware 'a mejor esfuerzo'"):
+mejor decir claramente "no lo sé" que inventar un dato. Si en el futuro
+aparece una fuente fiable para estas 3, es sencillo añadirla en
+`src/estimacion_ingreso.py`.
+
+Importante también: el número que se muestra **no es tu hardware
+real**. Es un cálculo normalizado a una velocidad de minado fija y
+redonda por algoritmo (por ejemplo, 1 kH/s para las monedas tipo
+Monero, 10 MH/s para Ravencoin) — sirve para comparar monedas entre sí
+y hacerte una idea de escala, no como una promesa exacta de cuánto vas
+a ganar tú. Medir tu velocidad real habría requerido ejecutar un
+benchmark del propio motor de minado, que descartamos por ahora para no
+alargar más esta parte (queda como posible mejora futura si algún día
+quieres esa precisión).

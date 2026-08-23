@@ -37,6 +37,8 @@ from recomendador import recomendar_cpu, recomendar_gpu
 from wallets_defecto import cargar_wallets_por_defecto
 import instalador
 import minar
+import estimacion_ingreso
+from estimacion_ingreso import EstimacionReferencia
 from minar import MONEDAS_SOPORTADAS
 
 RAIZ_PROYECTO = Path(__file__).resolve().parent.parent
@@ -68,6 +70,40 @@ def filtrar_solo_soportadas(opciones: list) -> tuple[list, str | None]:
     filtradas = [o for o in opciones if o.soportado_por_minar_hoy]
     recomendado = filtradas[0].simbolo if filtradas else None
     return filtradas, recomendado
+
+
+def _formato_moneda(valor: float) -> str:
+    """Formatea una cantidad de moneda por hora de forma legible, tanto si
+    es grande como si es diminuta (algunas monedas rinden fracciones muy
+    pequeñas a la velocidad de referencia)."""
+    if valor >= 1:
+        return f"{valor:,.4f}"
+    if valor >= 0.0001:
+        return f"{valor:.6f}"
+    return f"{valor:.2e}"
+
+
+def _formato_usd(valor: float) -> str:
+    if valor >= 0.01:
+        return f"{valor:.2f} $"
+    if valor >= 0.0001:
+        return f"{valor:.4f} $"
+    return f"{valor:.2e} $"
+
+
+def texto_estimacion(est: "EstimacionReferencia | None") -> str:
+    """Construye el texto que se muestra bajo cada desplegable a partir de
+    una estimación (o None). Es una función NO gráfica: no crea ninguna
+    ventana, para poder probarla con tests sin pantalla."""
+    if est is None:
+        return "Estimación no disponible ahora mismo"
+    moneda = _formato_moneda(est.moneda_por_hora)
+    usd = _formato_usd(est.usd_por_hora)
+    return (
+        f"≈ {moneda} {est.simbolo}/hora   ≈ {usd}/hora   "
+        f"(referencia para {est.hashrate_referencia} — no es la velocidad real "
+        f"de tu hardware; sirve para comparar entre monedas)"
+    )
 
 
 def boton_habilitado(cpu_activa: bool, cpu_wallet: str, gpu_activa: bool, gpu_wallet: str) -> bool:
@@ -110,6 +146,11 @@ class App(tk.Tk):
         self.sesiones: list = []
         self.log_lineas: list[tuple[str, str, str | None]] = []  # (bloque, cruda, interpretada)
         self._bucle_activo = False
+
+        # Estimaciones de ingreso (se calculan en segundo plano para no
+        # congelar la ventana mientras se consultan las APIs).
+        self.cola_est: "queue.Queue" = queue.Queue()
+        self._est_activo = False
 
         # Variables manuales de VRAM (por si la detección de GPU falla).
         self.gpu_manual_vram = tk.DoubleVar(value=0)
@@ -179,6 +220,8 @@ class App(tk.Tk):
         self.combo_cpu = ttk.Combobox(marco_cpu, state="disabled", width=68)
         self.combo_cpu.pack(anchor="w", pady=(6, 2))
         self.combo_cpu.bind("<<ComboboxSelected>>", lambda e: self._on_combo_cpu())
+        self.lbl_est_cpu = ttk.Label(marco_cpu, foreground="#0a7a3f", wraplength=620, justify="left")
+        self.lbl_est_cpu.pack(anchor="w", pady=(2, 2))
         ttk.Label(marco_cpu, text="Tu wallet para la CPU:").pack(anchor="w", pady=(4, 0))
         self.entry_wallet_cpu = ttk.Entry(marco_cpu, width=70, state="disabled")
         self.entry_wallet_cpu.pack(anchor="w", pady=(2, 0))
@@ -209,6 +252,8 @@ class App(tk.Tk):
         self.combo_gpu = ttk.Combobox(marco_gpu, state="disabled", width=68)
         self.combo_gpu.pack(anchor="w", pady=(6, 2))
         self.combo_gpu.bind("<<ComboboxSelected>>", lambda e: self._on_combo_gpu())
+        self.lbl_est_gpu = ttk.Label(marco_gpu, foreground="#0a7a3f", wraplength=620, justify="left")
+        self.lbl_est_gpu.pack(anchor="w", pady=(2, 2))
         ttk.Label(marco_gpu, text="Tu wallet para la GPU:").pack(anchor="w", pady=(4, 0))
         self.entry_wallet_gpu = ttk.Entry(marco_gpu, width=70, state="disabled")
         self.entry_wallet_gpu.pack(anchor="w", pady=(2, 0))
@@ -230,6 +275,12 @@ class App(tk.Tk):
         self._mostrar_resumen_hardware()
         self._rellenar_combos()
         self._on_toggle()
+
+        # Arranca el sondeo de estimaciones y calcula las de las monedas ya
+        # preseleccionadas en cada desplegable.
+        self._est_activo = True
+        self.after(150, self._procesar_cola_est)
+        self._refrescar_estimaciones()
 
     def _mostrar_resumen_hardware(self):
         self.txt_hardware.configure(state="normal")
@@ -310,16 +361,66 @@ class App(tk.Tk):
     def _on_combo_cpu(self):
         self._autorrellenar_wallet_si_cambio("cpu", self.combo_cpu, self._opciones_cpu_por_etiqueta, self.entry_wallet_cpu)
         self._actualizar_boton()
+        self._actualizar_estimacion("cpu")
 
     def _on_combo_gpu(self):
         self._autorrellenar_wallet_si_cambio("gpu", self.combo_gpu, self._opciones_gpu_por_etiqueta, self.entry_wallet_gpu)
         self._actualizar_boton()
+        self._actualizar_estimacion("gpu")
+
+    # ---- estimaciones de ingreso (en segundo plano) ----
+
+    def _widgets_estimacion(self, bloque: str):
+        if bloque == "cpu":
+            return self.combo_cpu, self._opciones_cpu_por_etiqueta, self.lbl_est_cpu
+        return self.combo_gpu, self._opciones_gpu_por_etiqueta, self.lbl_est_gpu
+
+    def _refrescar_estimaciones(self):
+        self._actualizar_estimacion("cpu")
+        self._actualizar_estimacion("gpu")
+
+    def _actualizar_estimacion(self, bloque: str):
+        """Lanza el cálculo de la estimación de la moneda seleccionada en un
+        hilo de fondo (la consulta de red puede tardar). El resultado se
+        recoge en _procesar_cola_est."""
+        combo, mapa, lbl = self._widgets_estimacion(bloque)
+        simbolo = self._simbolo_combo(combo, mapa)
+        if not simbolo:
+            lbl.configure(text="")
+            return
+        lbl.configure(text="Calculando…")
+
+        def trabajo(s=simbolo, b=bloque):
+            try:
+                est = estimacion_ingreso.estimar_referencia(s)
+            except Exception:
+                est = None  # nunca dejar caer la app por la estimación
+            self.cola_est.put((b, s, est))
+
+        threading.Thread(target=trabajo, daemon=True).start()
+
+    def _procesar_cola_est(self):
+        if not self._est_activo:
+            return
+        try:
+            while True:
+                bloque, simbolo, est = self.cola_est.get_nowait()
+                combo, mapa, lbl = self._widgets_estimacion(bloque)
+                # Solo aplicamos el resultado si la moneda sigue siendo la
+                # que se pidió (el usuario pudo cambiar de selección mientras
+                # se consultaba la red).
+                if self._simbolo_combo(combo, mapa) == simbolo:
+                    lbl.configure(text=texto_estimacion(est))
+        except queue.Empty:
+            pass
+        self.after(150, self._procesar_cola_est)
 
     def _reanalizar(self):
         self._detectar()
         self._mostrar_resumen_hardware()
         self._rellenar_combos()
         self._on_toggle()
+        self._refrescar_estimaciones()
 
     def _on_toggle(self):
         estado_cpu = "readonly" if self.cpu_activa.get() else "disabled"
@@ -370,6 +471,9 @@ class App(tk.Tk):
         self._lanzar_minado(cpu, gpu)
 
     def _construir_logs(self):
+        # Dejamos de sondear estimaciones: la pantalla de configuración (con
+        # sus etiquetas) va a desaparecer.
+        self._est_activo = False
         if self.frame_config is not None:
             self.frame_config.destroy()
             self.frame_config = None
