@@ -580,3 +580,27 @@ sistema que ya lo tiene (lo que sí quedó sin probar en esta sesión,
 por no tener a mano un Windows limpio sin Python: pruébalo tú la
 próxima vez que lo necesites en un ordenador nuevo, y dime cómo ha
 ido).
+
+## 2026-08-23 (10) — El instalador automático de Python no se disparaba: un alias falso de Windows
+
+Lo probaste de verdad en un Windows sin Python y seguía sin funcionar.
+La causa, esta vez confirmada con tu mensaje de error exacto, no tenía
+nada que ver con lo que se explicó en la entrada anterior: Windows 10
+y 11 traen de serie, sin que tú hagas nada, un "alias de ejecución" —
+un acceso directo falso — para `python.exe` y `python3.exe` que abre la
+Microsoft Store (o da el error que viste) si escribes `python` en una
+consola y no tienes Python instalado de verdad. El problema es que ese
+alias falso **sí aparece como "encontrado" para el comando `where`**,
+que es justo lo que usaba `Iniciar minado.bat` para comprobar si ya
+tenías Python. El `.bat` se lo creía, pensaba "ya está instalado" y
+nunca llegaba a descargarlo de verdad — y al intentar arrancar la app
+con ese Python falso, salía el mensaje de la Microsoft Store que viste.
+
+Arreglado en `Iniciar minado.bat`: en vez de preguntar "¿existe algo
+que se llame python en el PATH?" (`where`), ahora se **ejecuta de
+verdad** (`python --version`) y se comprueba si responde correctamente
+— el alias falso de Windows no lo hace, así que ya no engaña al
+script. Lo mismo para `py`, por si acaso. Probado de nuevo con Python
+real instalado en este ordenador (sigue detectándolo bien) — la
+comprobación completa en un Windows limpio con el alias falso activo
+la hizo Carlos, y con este cambio debería funcionar ya.

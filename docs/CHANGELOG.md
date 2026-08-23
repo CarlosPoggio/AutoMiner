@@ -1,5 +1,17 @@
 # Historial de sesiones
 
+## 2026-08-23 (10) — El alias falso de Windows engañaba a la detección de Python
+
+- Confirmado en un Windows real sin Python: `where python` encuentra el
+  "alias de ejecución" falso que Windows instala de serie para
+  `python.exe` (abre la Microsoft Store o da error), así que el `.bat`
+  creía que Python ya estaba instalado y nunca lo descargaba.
+- Arreglado: ahora se ejecuta `python --version`/`py --version` de
+  verdad y se comprueba que responde, en vez de solo mirar si "algo"
+  con ese nombre existe en el PATH. Probado de nuevo con Python real
+  instalado (sigue detectándolo bien).
+- `docs/DECISIONS.md` actualizado.
+
 ## 2026-08-23 (9) — `Iniciar minado.bat` instala Python solo si falta
 
 - El lanzador ya no se limita a avisar si falta Python: si no encuentra

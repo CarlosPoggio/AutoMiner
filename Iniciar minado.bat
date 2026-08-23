@@ -4,8 +4,13 @@ cd /d "%~dp0"
 set "PY_VERSION=3.13.15"
 set "PYEXE="
 
-where py >nul 2>nul && set "PYEXE=py"
-if not defined PYEXE (where python >nul 2>nul && set "PYEXE=python")
+rem OJO: no usar "where" para detectar Python. Windows trae de serie un
+rem "alias de ejecucion" falso para python.exe/python3.exe que aparece
+rem en el PATH aunque Python no este instalado (abre la Microsoft Store
+rem o da error al ejecutarlo). "where" lo encontraria igualmente. Por
+rem eso se intenta ejecutar de verdad y se comprueba el resultado.
+py --version >nul 2>nul && set "PYEXE=py"
+if not defined PYEXE (python --version >nul 2>nul && set "PYEXE=python")
 if not defined PYEXE call :instalar_python
 
 if not defined PYEXE (
@@ -52,6 +57,6 @@ if exist "%PY_HOME%\python.exe" (
     set "PYEXE=%PY_HOME%\python.exe"
     echo Python instalado correctamente.
 ) else (
-    where py >nul 2>nul && set "PYEXE=py"
+    py --version >nul 2>nul && set "PYEXE=py"
 )
 exit /b 0
