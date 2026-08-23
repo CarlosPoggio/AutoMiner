@@ -33,7 +33,7 @@
   `soportado_por_minar_hoy: True` para ellas en `src/monedas.py`.
 - Se añadió soporte para argumentos extra por moneda (`extra_args`), que
   usa Raptoreum para conectarse por TLS a su pool.
-- Se añadieron 6 pruebas nuevas (28 en total en `tests/test_minar.py` +
+- Se añadieron 4 pruebas nuevas (28 en total en `tests/test_minar.py` +
   las del formulario), todas en verde, y se comprobó a mano con
   `--dry-run`-style que el comando generado para cada moneda es correcto.
 - Quedan pendientes (necesitan un motor de minado distinto a XMRig, y no
@@ -57,7 +57,7 @@
 - Se creó `src/config_writer.py` y `src/formulario.py`: una ventana
   (Tkinter) que junta todo lo anterior en un formulario y genera
   `config.md`.
-- Se añadieron 18 pruebas automáticas nuevas (42 en total), todas en
+- Se añadieron 18 pruebas automáticas nuevas (24 en total), todas en
   verde, incluyendo la detección real de hardware de este entorno.
 - No se pudo mostrar una captura de pantalla del formulario porque este
   entorno de sesión no tiene pantalla ni el paquete gráfico de Tkinter
