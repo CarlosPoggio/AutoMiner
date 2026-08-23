@@ -22,8 +22,29 @@ if not defined PYEXE (
     exit /b 1
 )
 
+if not exist "bin\cacert.pem" call :asegurar_certificados
+
 "%PYEXE%" src\formulario.py
 if errorlevel 1 pause
+exit /b 0
+
+:asegurar_certificados
+rem En un Windows recien instalado (o cualquier equipo donde nunca se
+rem ha usado un navegador), el almacen de certificados de Windows puede
+rem estar casi vacio: se rellena bajo demanda, y Python nunca dispara
+rem esa descarga por su cuenta. curl.exe (a diferencia de Python) si usa
+rem el mismo mecanismo que un navegador, asi que de paso "calienta" el
+rem almacen. Descargamos ademas un paquete de certificados publicos de
+rem confianza (el mismo que usan Mozilla/certifi) como respaldo fijo,
+rem para no depender solo de ese almacen.
+if not exist "bin" mkdir "bin" >nul 2>nul
+
+where curl >nul 2>nul
+if errorlevel 1 (
+    powershell -NoProfile -Command "try { Invoke-WebRequest -Uri 'https://curl.se/ca/cacert.pem' -OutFile 'bin\cacert.pem' -UseBasicParsing } catch { exit 1 }"
+) else (
+    curl.exe -L --fail -o "bin\cacert.pem" "https://curl.se/ca/cacert.pem"
+)
 exit /b 0
 
 :instalar_python

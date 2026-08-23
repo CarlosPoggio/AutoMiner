@@ -1,5 +1,6 @@
 import ssl
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -44,6 +45,34 @@ class TestContextoHttps(unittest.TestCase):
              patch("red.ssl.enum_certificates", return_value=certificados, create=True) as mock_enum:
             red.contexto_https()
         mock_enum.assert_called()  # se intentó, aunque no haya nada que cargar
+
+    def test_sin_cacert_pem_no_falla(self):
+        with patch("red.RUTA_CACERT", Path("no_existe_de_verdad.pem")):
+            contexto = red.contexto_https()
+        self.assertIsInstance(contexto, ssl.SSLContext)
+
+    def test_cacert_pem_corrupto_no_rompe_el_resto(self):
+        with tempfile.TemporaryDirectory() as d:
+            ruta = Path(d) / "cacert.pem"
+            ruta.write_text("esto no es un certificado", encoding="utf-8")
+            with patch("red.RUTA_CACERT", ruta):
+                contexto = red.contexto_https()  # no debe lanzar excepción
+        self.assertIsInstance(contexto, ssl.SSLContext)
+
+    @unittest.skipUnless(hasattr(ssl, "enum_certificates"), "solo aplica en Windows")
+    def test_carga_cacert_pem_valido(self):
+        # Certificado real (uno cualquiera del propio almacén de Windows,
+        # convertido a PEM) para probar la carga sin fabricar datos ni
+        # depender de la red.
+        certs = ssl.enum_certificates("ROOT")
+        der = next(c for c, enc, _c in certs if enc == "x509_asn")
+        pem = ssl.DER_cert_to_PEM_cert(der)
+        with tempfile.TemporaryDirectory() as d:
+            ruta = Path(d) / "cacert.pem"
+            ruta.write_text(pem, encoding="ascii")
+            with patch("red.RUTA_CACERT", ruta):
+                contexto = red.contexto_https()
+        self.assertIsInstance(contexto, ssl.SSLContext)
 
 
 # No hay test de "en Linux no se enumeran certificados de Windows": en esta

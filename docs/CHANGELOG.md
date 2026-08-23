@@ -1,5 +1,24 @@
 # Historial de sesiones
 
+## 2026-08-23 (12) — Mismo error SSL, causa distinta: almacén de Windows "frío" sin CA públicas
+
+- Diagnosticado (por otra sesión de Claude Code, en un tercer
+  ordenador, verificado aquí antes de actuar) que el arreglo de la
+  entrada anterior no cubre un caso distinto que da el mismo error:
+  Windows rellena las autoridades de certificación públicas BAJO
+  DEMANDA (la primera vez que algo con Schannel las necesita); Python
+  usa OpenSSL, nunca dispara esa descarga, así que en un equipo donde
+  nunca se ha usado un navegador el almacén puede estar casi vacío.
+- `Iniciar minado.bat` ahora descarga con `curl` (Schannel, "calienta"
+  el almacén de paso) un paquete público de certificados de confianza
+  a `bin/cacert.pem` (el mismo que usan Mozilla/`certifi`, fuente
+  oficial curl.se/ca/cacert.pem, checksum verificado). No se sube a
+  git, ya cubierto por `bin/*`.
+- `src/red.py` lo carga como fuente adicional, independiente del
+  almacén de Windows. Nuevos tests que cubren fichero ausente, corrupto
+  y válido. 134 tests en verde (antes 131).
+- `docs/DECISIONS.md` actualizado con el detalle completo.
+
 ## 2026-08-23 (11) — "unable to get local issuer certificate" en Windows: fallo conocido de Python, sin paquetes externos
 
 - Nuevo `src/red.py`: `contexto_https()` construye un `ssl.SSLContext`

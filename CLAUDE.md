@@ -20,10 +20,11 @@ de texto (`config.md`, formato dual `cpu_moneda`/`cpu_wallet`/
 ese fichero.
 
 Módulos en `src/`: `red.py` (el `ssl.SSLContext` compartido para toda
-petición HTTPS del proyecto; en Windows carga el almacén de
-certificados del sistema uno a uno para esquivar un fallo conocido de
-Python que puede romper la verificación de certificados en un Windows
-totalmente normal, ver docstring del fichero), `hardware.py` (detecta CPU/GPU), `monedas.py`
+petición HTTPS del proyecto; combina dos capas para esquivar dos fallos
+distintos de certificados en Windows que dan el mismo mensaje de
+error — ver docstring del fichero y docs/DECISIONS.md entradas 11 y 12:
+carga el almacén de certificados de Windows uno a uno, y además usa
+`bin/cacert.pem` si `Iniciar minado.bat` lo descargó), `hardware.py` (detecta CPU/GPU), `monedas.py`
 (catálogo de monedas de CPU y GPU, con su comisión y si están
 implementadas), `motores.py` (sabe encontrar cada programa de minado —
 xmrig, kawpowminer, lolMiner — y construir su comando), `instalador.py`

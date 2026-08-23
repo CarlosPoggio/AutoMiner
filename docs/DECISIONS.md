@@ -636,3 +636,43 @@ Probado de verdad: la nueva función funciona contra GitHub en este
 ordenador, y hay un test que reproduce exactamente el fallo original
 (un certificado "dañado" en medio de la lista) para comprobar que ya
 no rompe la carga de los demás.
+
+## 2026-08-23 (12) — El mismo mensaje SSL, pero una causa distinta: almacén de Windows "frío"
+
+Abriste una segunda sesión de Claude Code en un tercer ordenador para
+diagnosticar (sin tocar nada) por qué el arreglo anterior no bastaba
+ahí, y trasladaste el informe. Buen diagnóstico, lo comprobé antes de
+actuar (no me fío a ciegas ni de mis propias sesiones anteriores) y es
+correcto: es el mismo mensaje de error, pero una causa distinta a la de
+la entrada 11.
+
+Windows no viene con todas las autoridades de certificación (CA)
+públicas ya instaladas: las va guardando **bajo demanda**, la primera
+vez que algo que usa Schannel (Edge, PowerShell, `curl.exe`...) valida
+una web que las necesita ("Actualización automática de certificados
+raíz"). Python, por dentro, usa OpenSSL en vez de Schannel, así que
+`ssl.enum_certificates()` (lo que arregló la entrada 11) solo lee lo
+que YA esté guardado — nunca dispara esa descarga. En un ordenador
+donde nunca se ha abierto un navegador, ese almacén puede estar
+prácticamente vacío de CA públicas, y entonces no hay nada que
+enumerar: el arreglo anterior no tiene nada que cargar, aunque
+funcione perfectamente.
+
+Solución, otra vez sin ningún paquete externo de Python: en vez de
+depender solo de que el almacén de Windows tenga lo necesario,
+`Iniciar minado.bat` descarga con `curl` (que sí usa Schannel — de
+paso "calienta" el almacén, como haría un navegador) un paquete de
+certificados públicos de confianza a `bin/cacert.pem`: el mismo que
+usan Mozilla y el paquete `certifi`, publicado oficialmente por el
+propio proyecto curl (curl.se/ca/cacert.pem, con su suma de
+comprobación verificada antes de usarlo). `src/red.py` lo carga como
+fuente adicional, independiente de si el almacén de Windows está frío
+o no. No se sube a git (ya cubierto por la regla `bin/*` del
+`.gitignore`): es un fichero público que se puede volver a descargar en
+cualquier momento, igual que los motores de minado.
+
+Quedan entonces dos capas independientes cubriendo el mismo problema:
+`bin/cacert.pem` (soluciona el almacén "frío") y la carga uno a uno del
+almacén de Windows de la entrada 11 (soluciona un certificado dañado
+en un almacén que sí tiene datos). Cualquiera de las dos basta por
+separado; juntas cubren más casos que cualquiera sola.
