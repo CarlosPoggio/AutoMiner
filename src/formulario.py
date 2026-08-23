@@ -423,14 +423,29 @@ class App(tk.Tk):
         self._refrescar_estimaciones()
 
     def _on_toggle(self):
-        estado_cpu = "readonly" if self.cpu_activa.get() else "disabled"
-        self.combo_cpu.configure(state=estado_cpu)
-        self.entry_wallet_cpu.configure(state=("normal" if self.cpu_activa.get() else "disabled"))
+        cpu_on = self.cpu_activa.get()
+        self.combo_cpu.configure(state=("readonly" if cpu_on else "disabled"))
+        self.entry_wallet_cpu.configure(state=("normal" if cpu_on else "disabled"))
+        # Mientras el campo estaba deshabilitado, cualquier intento de
+        # autorrellenarlo (al abrir la app, o al cambiar de moneda antes
+        # de marcar la casilla) no hacía nada: un Entry deshabilitado
+        # ignora insert()/delete(). En cuanto se habilita, si sigue vacío,
+        # lo intentamos otra vez ahora que sí puede recibir texto.
+        if cpu_on and not self.entry_wallet_cpu.get():
+            self._ultima_moneda_cpu = None
+            self._autorrellenar_wallet_si_cambio(
+                "cpu", self.combo_cpu, self._opciones_cpu_por_etiqueta, self.entry_wallet_cpu
+            )
 
         hay_gpu = bool(self.opciones_gpu)
         gpu_on = self.gpu_activa.get() and hay_gpu
         self.combo_gpu.configure(state=("readonly" if gpu_on else "disabled"))
         self.entry_wallet_gpu.configure(state=("normal" if gpu_on else "disabled"))
+        if gpu_on and not self.entry_wallet_gpu.get():
+            self._ultima_moneda_gpu = None
+            self._autorrellenar_wallet_si_cambio(
+                "gpu", self.combo_gpu, self._opciones_gpu_por_etiqueta, self.entry_wallet_gpu
+            )
         if not hay_gpu:
             self.chk_gpu.state(["disabled"])
         else:

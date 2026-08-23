@@ -1,5 +1,21 @@
 # Historial de sesiones
 
+## 2026-08-23 (7) — El autorrelleno de wallet seguía fallando: el campo empieza deshabilitado
+
+- Causa real (la del parser de la entrada anterior no era la única): el
+  campo de wallet de cada bloque empieza deshabilitado hasta que marcas
+  la casilla "Minar con la CPU/GPU" — y un campo deshabilitado en
+  Tkinter ignora en silencio cualquier `insert()`/`delete()` por código.
+  El primer intento de autorrelleno (al abrir la app) no hacía nada, y
+  como la app ya había registrado esa moneda como "procesada", marcar
+  la casilla después tampoco lo reintentaba.
+- Arreglado en `src/formulario.py` (`_on_toggle`): al habilitarse el
+  campo, si sigue vacío, se reintenta el autorrelleno. No pisa nada que
+  ya hayas escrito a mano.
+- Nuevo test de regresión que instancia una `App` de Tkinter real
+  (`tests/test_formulario_logica.py`) — este tipo de fallo solo se ve
+  con un widget real, no con funciones aisladas. 115 tests en verde.
+
 ## 2026-08-23 (6) — wallets.md: activadas tus wallets y arreglado el parser
 
 - Activadas las líneas de XMR y RVN en `wallets.md` (te faltaba borrar

@@ -470,3 +470,26 @@ en el formulario. Causas, las dos reales:
    símbolo tenga pinta de ticker real (letras/números, sin espacios,
    2 a 10 caracteres) antes de aceptar la línea. Test de regresión en
    `tests/test_wallets_defecto.py` que reproduce el caso exacto.
+
+## 2026-08-23 (7) — El bug de verdad: el campo de wallet empieza deshabilitado
+
+Arreglé lo de arriba y seguía sin autorrellenarse. La causa real era
+otra, y esta vez sí era la última: el campo de wallet de cada bloque
+(CPU/GPU) empieza **deshabilitado** en la ventana, porque la casilla
+"Minar con la CPU/GPU" no está marcada todavía al abrir la app. En
+Tkinter, un campo deshabilitado ignora en silencio cualquier intento de
+escribir en él por código (`insert`/`delete`) — no da ningún error, solo
+no hace nada. Como el autorrelleno se intentaba justo al construir la
+ventana (con el campo todavía deshabilitado), no servía de nada; y como
+la app ya había apuntado esa moneda como "procesada", marcar la casilla
+después tampoco lo volvía a intentar.
+
+Arreglado en `src/formulario.py` (`_on_toggle`): al marcar la casilla y
+habilitarse el campo, si sigue vacío, se vuelve a intentar el
+autorrelleno en ese momento. Si ya habías escrito algo a mano (por
+ejemplo, desmarcaste y volviste a marcar la casilla), no se toca — solo
+rellena campos vacíos. Nuevo test de regresión en
+`tests/test_formulario_logica.py` que abre una app de verdad (con
+Tkinter real, ya que esto es exactamente el tipo de fallo que una
+función aislada sin ventana no puede detectar) y comprueba que marcar
+la casilla rellena el campo.

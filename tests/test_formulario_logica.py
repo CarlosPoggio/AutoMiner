@@ -120,5 +120,48 @@ class TestTextoEstimacion(unittest.TestCase):
         self.assertNotIn("0.00 $", texto)
 
 
+@unittest.skipUnless(TIENE_FORMULARIO, "tkinter no disponible en este entorno")
+class TestAutorrellenoWalletAlMarcarCasilla(unittest.TestCase):
+    """
+    Regresión: al abrir la app, el campo de wallet empieza deshabilitado
+    (la casilla "Minar con la CPU/GPU" no está marcada todavía). Un
+    ttk.Entry deshabilitado ignora insert()/delete() en silencio, así que
+    el primer intento de autorrelleno (al construir la ventana) no hacía
+    nada — y como ya se había registrado esa moneda como "última
+    procesada", marcar la casilla después tampoco volvía a intentarlo.
+    Resultado: el usuario tenía que escribir la wallet a mano aunque
+    estuviera en wallets.md. Comprueba que, al marcar la casilla, el
+    campo (que ya está vacío) se rellena de verdad.
+    """
+
+    def setUp(self):
+        from unittest.mock import patch
+        import ingresos
+        # Sin esto, construir la App dispara una consulta real a
+        # whattomine.com al calcular la recomendación — la anulamos para
+        # que el test sea rápido y determinista.
+        self._parche_ingresos = patch.object(ingresos, "obtener_ingresos_en_vivo", return_value=None)
+        self._parche_ingresos.start()
+        self._parche_wallets = patch(
+            "formulario.cargar_wallets_por_defecto",
+            return_value={"XMR": "wallet-de-prueba-xmr"},
+        )
+        self._parche_wallets.start()
+
+    def tearDown(self):
+        self._parche_ingresos.stop()
+        self._parche_wallets.stop()
+
+    def test_marcar_cpu_rellena_la_wallet_por_defecto(self):
+        app = formulario.App()
+        try:
+            self.assertEqual(app.entry_wallet_cpu.get(), "")  # empieza deshabilitado y vacío
+            app.cpu_activa.set(True)
+            app._on_toggle()
+            self.assertEqual(app.entry_wallet_cpu.get(), "wallet-de-prueba-xmr")
+        finally:
+            app.destroy()
+
+
 if __name__ == "__main__":
     unittest.main()
