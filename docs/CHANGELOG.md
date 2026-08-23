@@ -1,5 +1,33 @@
 # Historial de sesiones
 
+## 2026-08-23 (13) — "Modo rendimiento": segundo acceso directo para minar más rápido (con administrador)
+
+- Arreglado `src/instalador.py`: ahora copia también los "ficheros
+  acompañantes" que necesite un motor (nueva clave
+  `ficheros_acompanantes` en `src/motores.py`; xmrig necesita
+  `WinRing0x64.sys`, antes se quedaba sin copiar). Se autosana también
+  en instalaciones que ya tenías, no solo en las nuevas.
+- Nuevo `src/rendimiento_windows.py`: concede el permiso "Lock pages
+  in memory" (huge pages, hasta ~20% más hashrate en RandomX) al
+  usuario actual mediante las funciones de seguridad de Windows con
+  `ctypes` (sin `pywin32` ni ningún paquete externo). Solo hace falta
+  una vez; verificado de verdad con `secedit /export` en esta máquina,
+  no solo que la función no diera error.
+- Nuevo `Iniciar minado (rendimiento máximo).bat`: se autoeleva a
+  administrador una vez, concede ese permiso y arranca la app —
+  como todo el proceso queda elevado, xmrig también puede usar el
+  "MSR mod" (que sí necesita admin cada vez que arranca, a diferencia
+  de huge pages). `Iniciar minado.bat` normal sigue sin pedir nada.
+- `src/formulario.py` muestra arriba si estás en "🚀 Modo rendimiento"
+  o en modo normal.
+- Añadidas 21 pruebas nuevas (146 en total): `test_rendimiento_windows.py`
+  (con la API de Windows simulada, sin tocar la política de seguridad
+  real en cada ejecución de los tests) y ampliado `test_instalador.py`.
+- `docs/DECISIONS.md` con el detalle completo, incluida una limitación
+  conocida: no pude confirmar en esta sesión si el MSR mod llega a
+  aplicarse de verdad (esta máquina de desarrollo parece ser una VM,
+  donde eso suele estar bloqueado aparte de los permisos).
+
 ## 2026-08-23 (12) — Mismo error SSL, causa distinta: almacén de Windows "frío" sin CA públicas
 
 - Diagnosticado (por otra sesión de Claude Code, en un tercer

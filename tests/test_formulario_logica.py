@@ -90,6 +90,23 @@ class TestFiltrarSoloSoportadas(unittest.TestCase):
 
 
 @unittest.skipUnless(TIENE_FORMULARIO, "tkinter no disponible en este entorno")
+@unittest.skipUnless(TIENE_FORMULARIO, "tkinter no disponible en este entorno")
+class TestModoRendimiento(unittest.TestCase):
+    def test_texto_modo_admin(self):
+        texto = formulario.texto_modo(True)
+        self.assertIn("rendimiento", texto.lower())
+        self.assertIn("activo", texto.lower())
+
+    def test_texto_modo_normal(self):
+        texto = formulario.texto_modo(False)
+        self.assertIn("normal", texto.lower())
+
+    def test_es_administrador_no_revienta(self):
+        # No se puede saber de antemano si esta sesión de tests corre
+        # elevada o no: solo comprobamos que devuelve un bool sin fallar.
+        self.assertIsInstance(formulario.es_administrador(), bool)
+
+
 class TestTextoEstimacion(unittest.TestCase):
     def test_none_da_mensaje_neutro(self):
         self.assertEqual(

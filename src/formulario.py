@@ -23,6 +23,7 @@ la configuración) está extraída en funciones sueltas para poder probarla
 con tests sin necesidad de pantalla (ver tests/test_formulario_logica.py).
 """
 
+import ctypes
 import queue
 import sys
 import threading
@@ -47,6 +48,27 @@ RAIZ_PROYECTO = Path(__file__).resolve().parent.parent
 # --------------------------------------------------------------------------
 # Lógica NO gráfica (testeable sin pantalla)
 # --------------------------------------------------------------------------
+
+def es_administrador() -> bool:
+    """
+    True si este proceso se está ejecutando con permisos de
+    administrador de Windows (por ejemplo, abierto con "Iniciar minado
+    (rendimiento máximo).bat"). En Mac/Linux siempre da False: ahí no
+    aplica esta distinción (xmrig no necesita nada especial).
+    """
+    if sys.platform != "win32":
+        return False
+    try:
+        return bool(ctypes.windll.shell32.IsUserAnAdmin())
+    except OSError:
+        return False
+
+
+def texto_modo(admin: bool) -> str:
+    if admin:
+        return "🚀 Modo rendimiento: activo (permisos de administrador)"
+    return "Modo normal (sin permisos de administrador — un poco más lento al minar con CPU)"
+
 
 def _etiqueta_opcion(opcion) -> str:
     if not opcion.soportado_por_minar_hoy:
@@ -225,6 +247,12 @@ class App(tk.Tk):
         self.frame_config = ttk.Frame(self, padding=16)
         self.frame_config.pack(fill="both", expand=True)
         marco = self.frame_config
+
+        admin = es_administrador()
+        ttk.Label(
+            marco, text=texto_modo(admin),
+            foreground=("#0a7a3f" if admin else "#777777"),
+        ).pack(anchor="w", pady=(0, 8))
 
         ttk.Label(marco, text="Hardware detectado", font=("", 12, "bold")).pack(anchor="w")
         self.txt_hardware = tk.Text(marco, height=4, width=72, state="disabled", wrap="word")

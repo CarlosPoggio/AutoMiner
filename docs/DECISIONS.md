@@ -676,3 +676,72 @@ Quedan entonces dos capas independientes cubriendo el mismo problema:
 almacén de Windows de la entrada 11 (soluciona un certificado dañado
 en un almacén que sí tiene datos). Cualquiera de las dos basta por
 separado; juntas cubren más casos que cualquiera sola.
+
+## 2026-08-23 (13) — "Modo rendimiento": segundo acceso directo, con permiso de administrador, para minar más rápido
+
+Viste en el registro de minado un aviso de xmrig: `failed to start
+WinRing0 driver: "WinRing0x64.sys not found"` seguido de
+`FAILED TO APPLY MSR MOD, HASHRATE WILL BE LOW`. No es grave — xmrig
+sigue minando igual, solo un poco más despacio — pero pediste
+explícitamente ir a por el máximo rendimiento posible, así que
+investigué qué hace falta para eliminarlo del todo.
+
+Hay dos optimizaciones de Windows detrás de ese aviso, con requisitos
+distintos que conviene separar:
+
+1. **El fichero que faltaba de verdad.** `src/instalador.py` solo
+   copiaba el programa principal (`xmrig.exe`) a `bin/`, no el fichero
+   `WinRing0x64.sys` que también trae la descarga (se queda dentro de
+   la carpeta descomprimida). Arreglado: ahora se copian también los
+   "ficheros acompañantes" que necesite cada motor (nueva clave
+   `ficheros_acompanantes` en `src/motores.py`), tanto en instalaciones
+   nuevas como en las que ya tenías (mientras siga existiendo la
+   carpeta descomprimida original, cosa que ya comprobé que pasa en la
+   práctica).
+2. **Dos permisos de administrador con reglas distintas.** Investigué
+   antes de tocar nada (fuentes: xmrig.com/docs/miner/randomx-optimization-guide/msr,
+   y guías de configuración de "huge pages" en Windows):
+   - **"MSR mod"** (~5-10% más rápido): necesita permisos de
+     administrador **cada vez que xmrig arranca**, porque carga un
+     controlador. No es un paso de una sola vez.
+   - **"Huge pages"** (hasta ~20% más rápido): necesita conceder el
+     permiso "Lock pages in memory" (`SeLockMemoryPrivilege`) a tu
+     usuario de Windows, pero **solo una vez** — después, xmrig lo usa
+     solo, sin admin, para siempre.
+
+   Como el "MSR mod" pide permiso cada vez, meterlo en el flujo normal
+   de "Iniciar minado.bat" rompería el "sin fricción" que es la razón
+   de ser de este proyecto (aparecería un aviso de Windows cada vez que
+   pulsaras el icono). En vez de eso, nuevo acceso directo separado:
+   **`Iniciar minado (rendimiento máximo).bat`** — se auto-eleva a
+   administrador (pide el permiso de Windows una vez, al abrirlo), le
+   concede a tu usuario el permiso de "huge pages" (nuevo
+   `src/rendimiento_windows.py`, usando directamente las funciones de
+   seguridad de Windows con `ctypes` — sin ningún paquete externo como
+   `pywin32`) y luego arranca la app con normalidad. Como el proceso
+   entero queda elevado, xmrig (que arranca como hijo de la propia app)
+   hereda esos permisos y puede usar el MSR mod también, sin pedir nada
+   aparte. `Iniciar minado.bat` (el de siempre) sigue funcionando
+   exactamente igual que hasta ahora, sin pedir nada — es tu elección
+   qué icono abrir cada vez.
+
+   Verificado de verdad, no solo "debería funcionar": corrí
+   `src/rendimiento_windows.py` en esta máquina (con permisos de
+   administrador reales) y comprobé con `secedit /export` que el
+   permiso quedó concedido de verdad en la política de seguridad de
+   Windows, no solo que la función devolviera "sin errores".
+
+   La ventana ahora muestra arriba si estás en "🚀 Modo rendimiento"
+   o en modo normal, para que sepas en cuál estás sin tener que
+   adivinarlo.
+
+Lo que no pude confirmar del todo aquí: si el MSR mod llega a aplicarse
+de verdad en tu hardware. En esta máquina de desarrollo (que además
+parece ser una máquina virtual, según el propio informe de xmrig) el
+aviso cambió de "no encuentro el fichero" a "no puedo escribir el
+registro del procesador" — el fichero ya se copia bien, pero escribir
+esos registros directamente suele estar bloqueado dentro de una
+máquina virtual, tenga o no permisos de administrador, y eso no
+depende de nuestro código. En tu ordenador de verdad (no una VM)
+debería funcionar sin ese obstáculo — confírmalo tú cuando lo pruebes
+con "modo rendimiento" y cuéntame qué mensaje da xmrig esta vez.

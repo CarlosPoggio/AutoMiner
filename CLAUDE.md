@@ -24,10 +24,16 @@ petición HTTPS del proyecto; combina dos capas para esquivar dos fallos
 distintos de certificados en Windows que dan el mismo mensaje de
 error — ver docstring del fichero y docs/DECISIONS.md entradas 11 y 12:
 carga el almacén de certificados de Windows uno a uno, y además usa
-`bin/cacert.pem` si `Iniciar minado.bat` lo descargó), `hardware.py` (detecta CPU/GPU), `monedas.py`
+`bin/cacert.pem` si `Iniciar minado.bat` lo descargó), `rendimiento_windows.py`
+(concede el permiso "huge pages" de Windows al usuario actual, con
+`ctypes` sobre las funciones de LSA — necesita administrador, por eso
+lo llama `conceder_rendimiento.py` solo desde
+`Iniciar minado (rendimiento máximo).bat`, no en el flujo normal, ver
+docs/DECISIONS.md entrada 13), `hardware.py` (detecta CPU/GPU), `monedas.py`
 (catálogo de monedas de CPU y GPU, con su comisión y si están
 implementadas), `motores.py` (sabe encontrar cada programa de minado —
-xmrig, kawpowminer, lolMiner — y construir su comando), `instalador.py`
+xmrig, kawpowminer, lolMiner — y construir su comando, incluidos
+ficheros acompañantes como `WinRing0x64.sys`), `instalador.py`
 (si un motor no está instalado, lo descarga solo desde su release
 oficial de GitHub y lo deja listo en `bin/`), `ingresos.py` (ranking de
 ingresos, en vivo o de reserva), `recomendador.py` (junta hardware +

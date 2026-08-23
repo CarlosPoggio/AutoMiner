@@ -28,9 +28,19 @@ falta, desde la página oficial del proyecto correspondiente en GitHub
 
 ## Uso
 
-1. En Windows, haz doble click en `Iniciar minado.bat` (en la carpeta
-   principal del proyecto). En Mac/Linux, o si prefieres no usar ese
-   fichero, ejecuta en una terminal:
+1. En Windows tienes dos accesos directos, en la carpeta principal del
+   proyecto — elige el que prefieras cada vez que abras la app:
+
+   - **`Iniciar minado.bat`**: el normal, sin pedir nada especial.
+   - **`Iniciar minado (rendimiento máximo).bat`**: pide permiso de
+     administrador de Windows (una vez, al abrirlo) para minar más
+     rápido con la CPU en Monero y monedas similares (~10-30% más
+     hashrate, según tu hardware). Si prefieres no dar ese permiso,
+     usa el normal — sigue funcionando exactamente igual, solo un poco
+     más despacio en esas monedas.
+
+   En Mac/Linux, o si prefieres no usar esos ficheros, ejecuta en una
+   terminal:
 
    ```
    python3 src/formulario.py

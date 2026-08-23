@@ -114,6 +114,17 @@ def _fake_targz(nombre_interno, contenido=b"#!/bin/sh\necho fake\n"):
     return buf.getvalue()
 
 
+def _fake_targz_multi(archivos: dict):
+    """Como _fake_targz, pero con varios ficheros dentro (nombre -> contenido)."""
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode="w:gz") as t:
+        for nombre_interno, contenido in archivos.items():
+            info = tarfile.TarInfo(name=nombre_interno)
+            info.size = len(contenido)
+            t.addfile(info, io.BytesIO(contenido))
+    return buf.getvalue()
+
+
 class TestAsegurarMotor(unittest.TestCase):
     def test_no_descarga_si_ya_esta_en_bin(self):
         with tempfile.TemporaryDirectory() as d:
@@ -147,6 +158,50 @@ class TestAsegurarMotor(unittest.TestCase):
             self.assertTrue(Path(ruta).exists())
             self.assertEqual(Path(ruta).name, "xmrig")
             self.assertEqual(Path(ruta).parent, raiz / "bin")
+
+    def test_copia_ficheros_acompanantes_en_instalacion_nueva(self):
+        release = {"tag_name": "v6.26.0", "assets": ASSETS_XMRIG}
+        targz = _fake_targz_multi({
+            "xmrig-6.26.0/xmrig": b"#!/bin/sh\necho fake\n",
+            "xmrig-6.26.0/WinRing0x64.sys": b"contenido de mentira del driver",
+        })
+
+        def fake_urlopen(peticion, timeout=None, **_kwargs):
+            url = getattr(peticion, "full_url", peticion)
+            if "api.github.com" in url:
+                return FakeResp(json.dumps(release).encode())
+            return FakeResp(targz)
+
+        with tempfile.TemporaryDirectory() as d:
+            raiz = Path(d)
+            with patch("instalador.platform.system", return_value="Linux"), \
+                 patch("instalador.platform.machine", return_value="x86_64"), \
+                 patch("motores.shutil.which", return_value=None), \
+                 patch("instalador.urllib.request.urlopen", side_effect=fake_urlopen):
+                instalador.asegurar_motor("xmrig", raiz)
+
+            self.assertTrue((raiz / "bin" / "WinRing0x64.sys").exists())
+
+    def test_autosana_ficheros_acompanantes_de_una_instalacion_previa(self):
+        # Simula una instalación de antes de que existiera esta comprobación
+        # (como la real, en Windows): el binario plano ya está en bin/ como
+        # xmrig.exe, y la carpeta descomprimida bin/xmrig/ (mismo nombre que
+        # el binario sin extensión, sin chocar con el .exe) sigue ahí con el
+        # driver dentro, pero nunca se copió a bin/.
+        with tempfile.TemporaryDirectory() as d:
+            raiz = Path(d)
+            bin_dir = raiz / "bin"
+            bin_dir.mkdir()
+            (bin_dir / "xmrig.exe").write_text("fake")
+            extraido = bin_dir / "xmrig" / "xmrig-6.26.0"
+            extraido.mkdir(parents=True)
+            (extraido / "WinRing0x64.sys").write_text("driver de mentira")
+
+            with patch("instalador.urllib.request.urlopen") as mock_urlopen:
+                instalador.asegurar_motor("xmrig", raiz)
+            mock_urlopen.assert_not_called()  # no hace falta descargar nada
+
+            self.assertTrue((bin_dir / "WinRing0x64.sys").exists())
 
     def test_kawpowminer_darwin_no_toca_red(self):
         with tempfile.TemporaryDirectory() as d:

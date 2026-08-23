@@ -207,10 +207,14 @@ def asegurar_motor(
     avisar = on_progreso or _noop
     raiz_proyecto = Path(raiz_proyecto)
 
-    # (1) Si ya está instalado, no descargamos nada.
+    # (1) Si ya está instalado, no descargamos nada. Aun así, comprobamos
+    # los ficheros acompañantes (por ejemplo WinRing0x64.sys de xmrig):
+    # instalaciones de antes de que existiera esta comprobación pueden no
+    # tenerlo copiado, aunque la carpeta descomprimida original siga ahí.
     ya = motores.encontrar_motor(nombre_motor, raiz_proyecto)
     if ya:
         avisar(f"{nombre_motor} ya está instalado")
+        _copiar_ficheros_acompanantes_si_faltan(nombre_motor, raiz_proyecto)
         return ya
 
     if nombre_motor not in _REPOS:
@@ -270,5 +274,25 @@ def asegurar_motor(
         modo = destino.stat().st_mode
         destino.chmod(modo | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
+    _copiar_ficheros_acompanantes_si_faltan(nombre_motor, raiz_proyecto)
+
     avisar("Listo")
     return str(destino)
+
+
+def _copiar_ficheros_acompanantes_si_faltan(nombre_motor: str, raiz_proyecto: Path) -> None:
+    """Copia a bin/ los ficheros que un motor necesita junto a su
+    ejecutable (por ejemplo, WinRing0x64.sys de xmrig), si la carpeta
+    descomprimida original todavía existe y todavía no se copiaron. Si
+    no hay nada que hacer, no hace nada — nunca lanza error, porque
+    estos ficheros son opcionales (el motor funciona igual sin ellos)."""
+    dir_extraido = raiz_proyecto / "bin" / nombre_motor
+    if not dir_extraido.is_dir():
+        return
+    for nombre_extra in motores.MOTORES[nombre_motor].get("ficheros_acompanantes", []):
+        destino_extra = raiz_proyecto / "bin" / nombre_extra
+        if destino_extra.exists():
+            continue
+        origen_extra = _buscar_binario_extraido(dir_extraido, [nombre_extra])
+        if origen_extra is not None:
+            shutil.copy2(origen_extra, destino_extra)
