@@ -29,7 +29,11 @@ carga el almacén de certificados de Windows uno a uno, y además usa
 `ctypes` sobre las funciones de LSA — necesita administrador, por eso
 lo llama `conceder_rendimiento.py` solo desde
 `Iniciar minado (rendimiento máximo).bat`, no en el flujo normal, ver
-docs/DECISIONS.md entrada 13), `hardware.py` (detecta CPU/GPU), `monedas.py`
+docs/DECISIONS.md entrada 13), `aislamiento_nucleo.py` (lee y cambia
+"Aislamiento del núcleo / Integridad de memoria" de Windows — bloquea
+el MSR mod de xmrig; nunca se cambia sin preguntar antes, ver
+`comprobar_aislamiento.py` y docs/DECISIONS.md entrada 14),
+`hardware.py` (detecta CPU/GPU), `monedas.py`
 (catálogo de monedas de CPU y GPU, con su comisión y si están
 implementadas), `motores.py` (sabe encontrar cada programa de minado —
 xmrig, kawpowminer, lolMiner — y construir su comando, incluidos

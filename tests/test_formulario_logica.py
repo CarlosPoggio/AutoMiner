@@ -1,4 +1,5 @@
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -199,6 +200,61 @@ class TestAutorrellenoWalletAlMarcarCasilla(unittest.TestCase):
             app.cpu_activa.set(True)
             app._on_toggle()
             self.assertEqual(app.entry_wallet_cpu.get(), "wallet-de-prueba-xmr")
+        finally:
+            app.destroy()
+
+
+@unittest.skipUnless(TIENE_FORMULARIO, "tkinter no disponible en este entorno")
+class TestPreguntarReactivarAislamiento(unittest.TestCase):
+    def setUp(self):
+        from unittest.mock import patch
+        import ingresos
+        self._parche_ingresos = patch.object(ingresos, "obtener_ingresos_en_vivo", return_value=None)
+        self._parche_ingresos.start()
+        self._dir = tempfile.TemporaryDirectory()
+        self._ruta_marca = Path(self._dir.name) / "_aislamiento_desactivado_por_app"
+        self._parche_ruta = patch("formulario.aislamiento_nucleo.RUTA_MARCA", self._ruta_marca)
+        self._parche_ruta.start()
+
+    def tearDown(self):
+        self._parche_ingresos.stop()
+        self._parche_ruta.stop()
+        self._dir.cleanup()
+
+    def test_sin_marca_no_pregunta_nada(self):
+        from unittest.mock import patch
+        app = formulario.App()
+        try:
+            with patch("formulario.messagebox.askyesno") as mock_pregunta:
+                app._preguntar_reactivar_aislamiento()
+            mock_pregunta.assert_not_called()
+        finally:
+            app.destroy()
+
+    def test_con_marca_y_usuario_dice_si_reactiva_y_borra_la_marca(self):
+        from unittest.mock import patch
+        self._ruta_marca.write_text("desactivado por la app")
+        app = formulario.App()
+        try:
+            with patch("formulario.messagebox.askyesno", return_value=True), \
+                 patch("formulario.messagebox.showinfo"), \
+                 patch("formulario.aislamiento_nucleo.reactivar", return_value=(True, "Hecho.")) as mock_reactivar:
+                app._preguntar_reactivar_aislamiento()
+            mock_reactivar.assert_called_once()
+            self.assertFalse(self._ruta_marca.exists())
+        finally:
+            app.destroy()
+
+    def test_con_marca_y_usuario_dice_no_conserva_la_marca(self):
+        from unittest.mock import patch
+        self._ruta_marca.write_text("desactivado por la app")
+        app = formulario.App()
+        try:
+            with patch("formulario.messagebox.askyesno", return_value=False), \
+                 patch("formulario.aislamiento_nucleo.reactivar") as mock_reactivar:
+                app._preguntar_reactivar_aislamiento()
+            mock_reactivar.assert_not_called()
+            self.assertTrue(self._ruta_marca.exists())  # se pregunta otra vez la próxima
         finally:
             app.destroy()
 

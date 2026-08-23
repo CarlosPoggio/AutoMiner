@@ -736,12 +736,77 @@ distintos que conviene separar:
    adivinarlo.
 
 Lo que no pude confirmar del todo aquí: si el MSR mod llega a aplicarse
-de verdad en tu hardware. En esta máquina de desarrollo (que además
-parece ser una máquina virtual, según el propio informe de xmrig) el
-aviso cambió de "no encuentro el fichero" a "no puedo escribir el
-registro del procesador" — el fichero ya se copia bien, pero escribir
-esos registros directamente suele estar bloqueado dentro de una
-máquina virtual, tenga o no permisos de administrador, y eso no
-depende de nuestro código. En tu ordenador de verdad (no una VM)
-debería funcionar sin ese obstáculo — confírmalo tú cuando lo pruebes
-con "modo rendimiento" y cuéntame qué mensaje da xmrig esta vez.
+de verdad en tu hardware. El aviso cambió de "no encuentro el fichero"
+a "no puedo escribir el registro del procesador" — el fichero ya se
+copia bien, pero escribir esos registros directamente seguía fallando.
+
+**Corrección (misma sesión, un poco después):** dije que esta máquina
+de desarrollo "parece ser una máquina virtual" — me equivoqué. Es tu
+ordenador físico real; confundí una etiqueta "VM" que muestra xmrig
+(sobre si tu CPU admite virtualización, no sobre si el propio xmrig
+está corriendo dentro de una) con estar realmente virtualizado. La
+causa real la encontré (y la comprobé de verdad en tu equipo, no
+adivinada) en la siguiente entrada.
+
+## 2026-08-23 (14) — La causa real del MSR mod: "Aislamiento del núcleo", y la app ahora puede desactivarlo (con tu permiso, cada vez)
+
+Investigué la causa de verdad en vez de dar la VM por buena, y la
+comprobé directamente en tu ordenador (no es una suposición):
+
+```
+Get-CimInstance -ClassName Win32_DeviceGuard -Namespace root\Microsoft\Windows\DeviceGuard
+  SecurityServicesConfigured        : {2}
+  VirtualizationBasedSecurityStatus : 2   (activa y funcionando)
+```
+
+Tu Windows tiene activada **"Aislamiento del núcleo / Integridad de
+memoria"** (también llamada HVCI): una protección de seguridad real de
+Windows 11 que bloquea controladores de kernel antiguos o sin firmar,
+como `WinRing0x64.sys` — el que necesita xmrig para el MSR mod. Es un
+conflicto conocido y documentado entre esta protección y programas de
+minado, no un fallo de nuestro código.
+
+Aquí SÍ hacía falta preguntarte, porque tocar esto es una decisión de
+seguridad real: te pregunté directamente si querías que la app pudiera
+desactivarla, y me contestaste que sí, pero con reglas concretas que
+implementé tal cual:
+
+- **Solo desde "Iniciar minado (rendimiento máximo).bat"**, nunca desde
+  el lanzador normal — igual que ya pasaba con el MSR mod y el permiso
+  de administrador.
+- **Se pregunta cada vez que hace falta**, con una ventana, antes de
+  abrir la app: si la protección está activa, ¿quieres desactivarla
+  ahora? Si dices que sí, la app la desactiva, avisa de que hace falta
+  reiniciar el ordenador, y no abre la app todavía (hay que reiniciar
+  primero para que el cambio se aplique de verdad). La próxima vez que
+  abras "modo rendimiento", si ya está desactivada, no vuelve a
+  preguntar y sigue directa a minar.
+- **Al detener el minado o cerrar la app**, si fue la propia app quien
+  la desactivó, pregunta si quieres volver a activarla. Si dices que
+  no, te lo volverá a preguntar la próxima vez (no se te olvida sin
+  que lo sepas). Si dices que sí, la reactiva y avisa de que hace falta
+  reiniciar para que se aplique.
+
+Cómo se hizo, en tres piezas nuevas, todas con librería estándar (nada
+de paquetes externos):
+- `src/aislamiento_nucleo.py`: lee el estado con PowerShell sobre la
+  clase WMI oficial de Microsoft para esto (`Win32_DeviceGuard`, la
+  misma que usé para comprobar tu equipo) y cambia el estado con la
+  clave de registro que Microsoft documenta oficialmente
+  (`HKLM\...\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity`,
+  valor `Enabled`) — la fuente exacta está en
+  learn.microsoft.com/windows/security/hardware-security/
+  enable-virtualization-based-protection-of-code-integrity, no
+  adivinada.
+- `src/comprobar_aislamiento.py`: el script que pregunta antes de abrir
+  la app (llamado desde el `.bat`).
+- `src/formulario.py`: la pregunta de "¿lo reactivamos?" al detener el
+  minado o cerrar la ventana.
+
+Importante: **no toqué tu ajuste real durante esta sesión.** Comprobé
+que la LECTURA del estado funciona de verdad en tu equipo (dio
+"activo", justo lo que esperábamos). El cambio de estado en sí
+(desactivar/reactivar) lo probé con pruebas automáticas que simulan el
+registro de Windows, sin tocar el tuyo de verdad — esa acción solo
+ocurrirá cuando tú la autorices desde el propio lanzador, nunca desde
+aquí.

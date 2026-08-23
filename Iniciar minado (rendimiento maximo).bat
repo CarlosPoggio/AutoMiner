@@ -27,6 +27,16 @@ rem usar este mismo acceso otra vez despues para concederlo).
 set "PYEXE="
 py --version >nul 2>nul && set "PYEXE=py"
 if not defined PYEXE (python --version >nul 2>nul && set "PYEXE=python")
-if defined PYEXE "%PYEXE%" src\conceder_rendimiento.py
+
+if defined PYEXE (
+    "%PYEXE%" src\conceder_rendimiento.py
+
+    rem Si "Aislamiento del nucleo / Integridad de memoria" esta activo,
+    rem este script pregunta (con una ventana) si se quiere desactivar
+    rem para el MSR mod. Si el usuario dice que si, deja el ordenador
+    rem pidiendo un reinicio y NO abrimos la app todavia (salida 2).
+    "%PYEXE%" src\comprobar_aislamiento.py
+    if errorlevel 2 exit /b 0
+)
 
 call "Iniciar minado.bat"

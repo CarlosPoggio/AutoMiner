@@ -35,9 +35,14 @@ falta, desde la página oficial del proyecto correspondiente en GitHub
    - **`Iniciar minado (rendimiento máximo).bat`**: pide permiso de
      administrador de Windows (una vez, al abrirlo) para minar más
      rápido con la CPU en Monero y monedas similares (~10-30% más
-     hashrate, según tu hardware). Si prefieres no dar ese permiso,
-     usa el normal — sigue funcionando exactamente igual, solo un poco
-     más despacio en esas monedas.
+     hashrate, según tu hardware). Si Windows tiene activada la
+     protección "Aislamiento del núcleo / Integridad de memoria" (una
+     protección de seguridad real, no solo un ajuste de rendimiento),
+     te preguntará si quieres desactivarla para ganar ese extra — es tu
+     decisión, y puedes volver a activarla cuando quieras, la propia
+     app te lo pregunta al detener el minado o al cerrarla. Si
+     prefieres no dar ese permiso, usa el normal — sigue funcionando
+     exactamente igual, solo un poco más despacio en esas monedas.
 
    En Mac/Linux, o si prefieres no usar esos ficheros, ejecuta en una
    terminal:

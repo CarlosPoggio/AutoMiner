@@ -30,12 +30,13 @@ import threading
 import tkinter as tk
 from datetime import date
 from pathlib import Path
-from tkinter import ttk
+from tkinter import messagebox, ttk
 
 from hardware import InfoGPU, detectar_cpu, detectar_gpus
 from config_writer import guardar_config
 from recomendador import recomendar_cpu, recomendar_gpu
 from wallets_defecto import cargar_wallets_por_defecto
+import aislamiento_nucleo
 import instalador
 import minar
 import estimacion_ingreso
@@ -721,6 +722,7 @@ class App(tk.Tk):
                 pass
         self.sesiones = []
         self._anexar("Minado detenido.")
+        self._preguntar_reactivar_aislamiento()
 
     def _volver(self):
         self._detener()
@@ -732,10 +734,42 @@ class App(tk.Tk):
         self._detectar()
         self._construir_config()
 
+    def _preguntar_reactivar_aislamiento(self):
+        """Si esta misma app desactivó "Aislamiento del núcleo /
+        Integridad de memoria" para minar más rápido (ver
+        src/comprobar_aislamiento.py), pregunta ahora si se quiere
+        volver a activar. No hace nada si nunca se desactivó desde
+        aquí."""
+        if not aislamiento_nucleo.RUTA_MARCA.exists():
+            return
+        quiere_reactivar = messagebox.askyesno(
+            "Aislamiento del núcleo",
+            "Desactivaste la protección de Windows \"Aislamiento del "
+            "núcleo / Integridad de memoria\" para minar más rápido. "
+            "¿Quieres volver a activarla ahora? (hace falta reiniciar "
+            "el ordenador después para que se aplique)",
+        )
+        if quiere_reactivar:
+            ok, mensaje = aislamiento_nucleo.reactivar()
+            if ok:
+                aislamiento_nucleo.RUTA_MARCA.unlink(missing_ok=True)
+            # No usamos self._anexar aquí: puede que ni siquiera exista el
+            # registro de log todavía (por ejemplo, si el usuario cierra
+            # la app sin haber llegado a minar). Un aviso aparte siempre
+            # funciona, esté donde esté la ventana en ese momento.
+            messagebox.showinfo("Aislamiento del núcleo", mensaje)
+        # Si dice que no, se deja la marca: se le volverá a preguntar
+        # la próxima vez que detenga el minado o cierre la app.
+
+    def _al_cerrar_ventana(self):
+        self._preguntar_reactivar_aislamiento()
+        self.destroy()
+
 
 def main():
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     app = App()
+    app.protocol("WM_DELETE_WINDOW", app._al_cerrar_ventana)
     app.mainloop()
 
 

@@ -132,7 +132,12 @@ class TestAsegurarMotor(unittest.TestCase):
             bin_dir = raiz / "bin"
             bin_dir.mkdir()
             (bin_dir / "xmrig").write_text("fake")
-            with patch("instalador.urllib.request.urlopen") as mock_urlopen:
+            # shutil.which mockeado a propósito: sin esto, el test depende
+            # de que el PATH real de la máquina no tenga ningún "xmrig" —
+            # cierto casi siempre, pero no garantizado (se vio fallar una
+            # vez de forma no reproducible).
+            with patch("motores.shutil.which", return_value=None), \
+                 patch("instalador.urllib.request.urlopen") as mock_urlopen:
                 ruta = instalador.asegurar_motor("xmrig", raiz)
             mock_urlopen.assert_not_called()
             self.assertTrue(ruta.endswith("xmrig"))

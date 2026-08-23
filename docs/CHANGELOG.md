@@ -1,5 +1,32 @@
 # Historial de sesiones
 
+## 2026-08-23 (14) — Causa real del MSR mod: "Aislamiento del núcleo", con opción de desactivarlo
+
+- Corregido: la entrada anterior decía que la máquina de desarrollo
+  "parece una VM" — era un error mío (confundí una etiqueta de xmrig
+  sobre virtualización de CPU con estar dentro de una VM). Es un
+  ordenador físico real.
+- Causa real, comprobada de verdad (`Get-CimInstance Win32_DeviceGuard`
+  en la propia máquina): "Aislamiento del núcleo / Integridad de
+  memoria" (HVCI) bloquea `WinRing0x64.sys`, el controlador que xmrig
+  necesita para el MSR mod. Conflicto conocido con software de minado.
+- Nuevo `src/aislamiento_nucleo.py`: lee el estado vía PowerShell sobre
+  `Win32_DeviceGuard` y lo cambia vía la clave de registro oficial de
+  Microsoft — sin paquetes externos.
+- Nuevo `src/comprobar_aislamiento.py`: pregunta (antes de abrir la
+  app) si desactivarlo, solo desde el lanzador de rendimiento máximo.
+  Si se desactiva, pide reiniciar y no abre la app todavía.
+- `src/formulario.py`: pregunta si reactivarlo al detener el minado o
+  cerrar la ventana (bug real encontrado y arreglado en el proceso: la
+  pregunta podía reventar la app si el registro de log aún no existía;
+  ahora usa un aviso aparte).
+- No se tocó el ajuste real de Carlos en esta sesión: solo se verificó
+  la lectura de estado de verdad; el cambio se probó con mocks.
+- Añadidas 15 pruebas nuevas (160 en total). De paso, test de
+  regresión endurecido (`test_no_descarga_si_ya_esta_en_bin`: le
+  faltaba mockear `shutil.which`, se vio fallar una vez de forma no
+  reproducible).
+
 ## 2026-08-23 (13) — "Modo rendimiento": segundo acceso directo para minar más rápido (con administrador)
 
 - Arreglado `src/instalador.py`: ahora copia también los "ficheros
