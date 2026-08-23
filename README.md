@@ -23,7 +23,9 @@ falta, desde la página oficial del proyecto correspondiente en GitHub
 
 ## Uso
 
-1. Ejecuta:
+1. En Windows, haz doble click en `Iniciar minado.bat` (en la carpeta
+   principal del proyecto). En Mac/Linux, o si prefieres no usar ese
+   fichero, ejecuta en una terminal:
 
    ```
    python3 src/formulario.py
