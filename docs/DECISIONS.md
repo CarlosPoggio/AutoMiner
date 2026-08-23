@@ -449,3 +449,24 @@ vez que aparezca un error así: si el mismo problema persiste después de
 aplicar el arreglo "más probable" a la primera, hay que parar de
 suponer y comprobar directamente qué está pasando en la máquina real
 antes de dar otra explicación.
+
+## 2026-08-23 (6) — `wallets_defecto.py` leía como "moneda" cualquier línea con ":"
+
+Al rellenar `wallets.md` con tu wallet de Monero, no se autocompletaba
+en el formulario. Causas, las dos reales:
+
+1. **Tuya, de instrucciones poco claras**: dejaste el `#` delante de la
+   línea (`# XMR: tu-dirección`), y el propio fichero explica que hay
+   que borrarlo para activarla — sin el `#` de por medio, esa línea es
+   solo un comentario y se ignora a propósito. Ya te la activé yo.
+2. **Nuestra, un bug real** que encontré al comprobar por qué: el lector
+   de `wallets.md` (`src/wallets_defecto.py`) aceptaba como "moneda"
+   CUALQUIER línea con un `:` — incluidas las frases explicativas del
+   principio del propio fichero (por ejemplo "...formato \`SIMBOLO:
+   direccion\`..." se leía como si "Una línea por moneda, formato
+   \`SIMBOLO" fuera el símbolo de una moneda). No se notaba en la
+   ventana porque esas frases nunca coinciden con una moneda de verdad,
+   pero era un fallo real de todos modos. Arreglado exigiendo que el
+   símbolo tenga pinta de ticker real (letras/números, sin espacios,
+   2 a 10 caracteres) antes de aceptar la línea. Test de regresión en
+   `tests/test_wallets_defecto.py` que reproduce el caso exacto.

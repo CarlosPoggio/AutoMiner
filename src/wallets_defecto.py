@@ -10,7 +10,14 @@ cadena de bloques en cuanto llega un pago). Lo que nunca debe ir aquí
 frase semilla, eso sí es secreto.
 """
 
+import re
 from pathlib import Path
+
+# Un símbolo de moneda real es corto y sin espacios (XMR, RVN...). Esto
+# evita que las frases explicativas del propio wallets.md (que también
+# tienen ":", por ejemplo "formato `SIMBOLO: direccion`") se cuelen como
+# si fueran una moneda más.
+_SIMBOLO_VALIDO = re.compile(r"^[A-Z0-9]{2,10}$")
 
 
 def cargar_wallets_por_defecto(ruta: Path) -> dict[str, str]:
@@ -33,6 +40,6 @@ def cargar_wallets_por_defecto(ruta: Path) -> dict[str, str]:
         simbolo, wallet = linea.split(":", 1)
         simbolo = simbolo.strip().upper()
         wallet = wallet.strip()
-        if simbolo and wallet:
+        if simbolo and wallet and _SIMBOLO_VALIDO.match(simbolo):
             wallets[simbolo] = wallet
     return wallets

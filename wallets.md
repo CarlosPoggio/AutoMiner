@@ -19,11 +19,11 @@ XMR, WOW, ZEPH, SAL, RTM (CPU) y RVN, KAS, ALPH (GPU).
 
 Ejemplo (borra el # para activar la línea y pon tu dirección real):
 
-# XMR: tu_direccion_de_monero_aqui
+XMR: 49d9CfsFivt9pGRV1T6XZzMtKHLnZknpZHHTwZSUK5ZRUdpJZ8xffdkSa6L3KDBVjWMasm5YZeqM7dCYwaf5nNiJQ8Z8GUg
 # WOW: tu_direccion_de_wownero_aqui
 # ZEPH: tu_direccion_de_zephyr_aqui
 # SAL: tu_direccion_de_salvium_aqui
 # RTM: tu_direccion_de_raptoreum_aqui
-# RVN: tu_direccion_de_ravencoin_aqui
+RVN: RUryKpxJLtbMj9AYfZMBv4QMS1cFK3kNtz
 # KAS: tu_direccion_de_kaspa_aqui
 # ALPH: tu_direccion_de_alephium_aqui

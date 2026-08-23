@@ -1,5 +1,17 @@
 # Historial de sesiones
 
+## 2026-08-23 (6) — wallets.md: activadas tus wallets y arreglado el parser
+
+- Activadas las líneas de XMR y RVN en `wallets.md` (te faltaba borrar
+  el `#` delante, tal como explica el propio fichero).
+- Bug real encontrado al investigarlo: `src/wallets_defecto.py` aceptaba
+  como "moneda" cualquier línea con `:`, incluidas las frases
+  explicativas del principio de `wallets.md`. No se notaba en la
+  ventana (esas frases nunca coinciden con una moneda real), pero se
+  arregló exigiendo que el símbolo tenga pinta de ticker real. Nuevo
+  test de regresión en `tests/test_wallets_defecto.py`. 114 tests en
+  verde.
+
 ## 2026-08-23 (5) — La causa real del "Acceso denegado" no era el antivirus: bug en la búsqueda del ejecutable
 
 - El "Acceso denegado" seguía pasando después de excluir la carpeta del

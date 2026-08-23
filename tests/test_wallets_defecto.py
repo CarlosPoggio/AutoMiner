@@ -33,6 +33,22 @@ class TestCargarWalletsPorDefecto(unittest.TestCase):
             resultado = wallets_defecto.cargar_wallets_por_defecto(ruta)
         self.assertEqual(resultado, {"RVN": "Rwallet456"})
 
+    def test_ignora_frases_explicativas_con_dos_puntos(self):
+        # Regresión: las líneas de explicación del propio wallets.md (por
+        # ejemplo el texto "formato `SIMBOLO: direccion`") también tienen
+        # ":", pero no son una moneda de verdad — antes se colaban en el
+        # diccionario con la frase entera como "símbolo".
+        contenido = (
+            "Una línea por moneda, formato `SIMBOLO: direccion`. Cuando abras\n"
+            "Este fichero SÍ se sube a git: una dirección es pública.\n"
+            "XMR: 4wallet123\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            ruta = Path(d) / "wallets.md"
+            ruta.write_text(contenido, encoding="utf-8")
+            resultado = wallets_defecto.cargar_wallets_por_defecto(ruta)
+        self.assertEqual(resultado, {"XMR": "4wallet123"})
+
 
 if __name__ == "__main__":
     unittest.main()
