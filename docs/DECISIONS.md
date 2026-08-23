@@ -536,3 +536,47 @@ Cómo se hizo, con cuidado de no inventar ningún formato:
   una `App` de Tkinter de verdad (no solo con funciones aisladas), para
   no repetir el tipo de fallo de la entrada anterior. 127 tests en
   verde.
+
+## 2026-08-23 (9) — `Iniciar minado.bat` instala Python solo si hace falta
+
+Probaste el proyecto en un segundo ordenador (clonado desde cero) y no
+funcionó: no tenía Python instalado, y hasta ahora el lanzador solo
+comprobaba si ya estaba y, si no, te mandaba a instalarlo tú a mano.
+Pediste que fuera de verdad "plug & play". Ahora `Iniciar minado.bat`,
+si no encuentra `py` ni `python`, se instala Python él solo antes de
+abrir la app:
+
+1. Descarga el instalador oficial de Windows desde python.org (la
+   misma fuente que usarías si lo hicieras tú a mano) con `curl`
+   (viene incluido en Windows 10/11 modernos) o, si no está
+   disponible, con PowerShell como alternativa.
+2. Lo ejecuta en modo silencioso (`/quiet`) y **solo para tu usuario**
+   (`InstallAllUsers=0`) — así no hace falta ser administrador ni
+   aparece ningún permiso de Windows que aceptar, y no toca a otros
+   usuarios del ordenador. Incluye Tkinter (`Include_tcltk=1`, hace
+   falta para la ventana) y añade Python al PATH para la próxima vez
+   (`PrependPath=1`).
+3. Como el PATH recién añadido no se nota hasta abrir una ventana
+   nueva, en esta misma ejecución se usa directamente la ruta donde
+   Python acaba de instalarse, sin depender de PATH.
+
+Fijé una versión concreta de Python en el propio `.bat`
+(`PY_VERSION=3.13.15`, comprobado que el enlace de descarga funciona de
+verdad antes de fijarla) en vez de "la última", por lo mismo que ya se
+explicó para los motores de minado: es más fiable depender de un
+número de versión conocido que de una URL que puede cambiar de forma
+imprevisible. Habrá que actualizar ese número de vez en cuando; no es
+urgente, cualquier Python 3.10 o más reciente sirve para este proyecto.
+
+Si por lo que sea la descarga o instalación fallan (sin internet, red
+bloqueada...), el `.bat` no se queda colgado ni da un error críptico:
+avisa con un mensaje claro y, como último recurso, sigue apuntando a
+instalar Python tú mismo desde python.org.
+
+Probado de verdad en este ordenador: la descarga (con la misma línea
+de `curl` del `.bat`, no una simulación) y la detección de la ruta de
+instalación, sin necesidad de reinstalar Python de verdad sobre un
+sistema que ya lo tiene (lo que sí quedó sin probar en esta sesión,
+por no tener a mano un Windows limpio sin Python: pruébalo tú la
+próxima vez que lo necesites en un ordenador nuevo, y dime cómo ha
+ido).

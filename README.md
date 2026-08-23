@@ -7,14 +7,19 @@ todo lo demás, incluido instalar el programa de minado que haga falta.
 
 ## Antes de empezar (en tu ordenador, no aquí)
 
-Solo hace falta **Python 3** instalado (ver `docs/DECISIONS.md`):
+**En Windows no hace falta instalar nada primero.** Descarga este
+repositorio y haz doble click en `Iniciar minado.bat`: si no tienes
+Python, el propio lanzador lo detecta y lo instala solo (una versión
+para tu usuario, sin permisos de administrador, sin que tengas que
+tocar nada) antes de abrir la app. Solo hace falta conexión a internet
+la primera vez.
 
-- En Mac y Linux suele venir de serie.
-- En Windows hay que instalarlo desde python.org (marca la casilla "Add
-  to PATH" durante la instalación).
-- En Linux, si al abrir el formulario da un error de Tkinter, instala el
-  paquete del sistema `python3-tk` (por ejemplo `sudo apt install
-  python3-tk`).
+En Mac y Linux hace falta **Python 3** (ver `docs/DECISIONS.md`):
+
+- En Mac suele venir de serie.
+- En Linux suele venir de serie; si al abrir el formulario da un error
+  de Tkinter, instala el paquete del sistema `python3-tk` (por ejemplo
+  `sudo apt install python3-tk`).
 
 No hace falta instalar el motor de minado (XMRig, kawpowminer o
 lolMiner) a mano: la app lo descarga sola la primera vez que hace

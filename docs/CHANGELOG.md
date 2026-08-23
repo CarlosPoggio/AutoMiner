@@ -1,5 +1,19 @@
 # Historial de sesiones
 
+## 2026-08-23 (9) — `Iniciar minado.bat` instala Python solo si falta
+
+- El lanzador ya no se limita a avisar si falta Python: si no encuentra
+  `py` ni `python`, descarga el instalador oficial de python.org
+  (versión fijada `3.13.15`, verificada que el enlace funciona) con
+  `curl` (o PowerShell si `curl` no está disponible) y lo instala en
+  silencio solo para el usuario actual (`/quiet InstallAllUsers=0`,
+  sin admin, con Tkinter incluido y añadido al PATH).
+- Probado de verdad en este ordenador: descarga real (28 MB) con la
+  misma línea de `curl` del `.bat`, y la lógica de detección de la
+  ruta de instalación. No probado el ciclo completo en un Windows
+  limpio sin Python (no había uno a mano en esta sesión).
+- README.md, CLAUDE.md y docs/DECISIONS.md actualizados.
+
 ## 2026-08-23 (8) — Ingreso estimado con hashrate real en la pantalla de minado
 
 - Nuevo `minar.extraer_hashrate_real(linea, motor)`: saca la velocidad

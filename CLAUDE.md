@@ -74,6 +74,11 @@ formato de comando y comisión con fuentes fiables (ver
 - Abrir la app (analiza, deja elegir y arranca a minar de verdad):
   `python3 src/formulario.py` — necesita una pantalla; en Linux puede
   hacer falta instalar el paquete del sistema `python3-tk` si no abre.
+  En Windows, `Iniciar minado.bat` hace lo mismo con doble click y, si
+  falta Python, lo instala él solo primero: descarga el instalador
+  oficial de python.org (versión fijada en el propio `.bat`, variable
+  `PY_VERSION`) y lo instala en silencio solo para el usuario actual
+  (sin permisos de administrador).
   **Ojo: a diferencia de antes, el botón "Comenzar a minar" sí conecta
   con un pool real y mina de verdad** (e instala el motor que falte).
 - Comprobar el script de minado sin minar de verdad: `python3 src/minar.py --dry-run`
