@@ -130,7 +130,7 @@ class TestAsegurarMotor(unittest.TestCase):
         release = {"tag_name": "v6.26.0", "assets": ASSETS_XMRIG}
         targz = _fake_targz("xmrig-6.26.0/xmrig")
 
-        def fake_urlopen(peticion, timeout=None):
+        def fake_urlopen(peticion, timeout=None, **_kwargs):
             url = getattr(peticion, "full_url", peticion)
             if "api.github.com" in url:
                 return FakeResp(json.dumps(release).encode())

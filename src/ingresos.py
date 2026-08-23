@@ -19,6 +19,8 @@ import json
 import urllib.error
 import urllib.request
 
+import red
+
 URL_WHATTOMINE = "https://whattomine.com/coins.json"
 TIMEOUT_SEGUNDOS = 6
 
@@ -32,7 +34,7 @@ def obtener_ingresos_en_vivo() -> dict[str, float] | None:
         peticion = urllib.request.Request(
             URL_WHATTOMINE, headers={"User-Agent": "minero-cripto-formulario/1.0"}
         )
-        with urllib.request.urlopen(peticion, timeout=TIMEOUT_SEGUNDOS) as respuesta:
+        with urllib.request.urlopen(peticion, timeout=TIMEOUT_SEGUNDOS, context=red.contexto_https()) as respuesta:
             datos = json.load(respuesta)
     except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError):
         return None

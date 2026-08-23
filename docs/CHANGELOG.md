@@ -1,5 +1,20 @@
 # Historial de sesiones
 
+## 2026-08-23 (11) — "unable to get local issuer certificate" en Windows: fallo conocido de Python, sin paquetes externos
+
+- Nuevo `src/red.py`: `contexto_https()` construye un `ssl.SSLContext`
+  cargando los certificados del almacén de Windows uno a uno, en vez de
+  todos de golpe — así uno dañado (fallo conocido de Python,
+  bugs.python.org/issue26313) no rompe la verificación de TODOS los
+  demás. Sin depender de `certifi` ni ningún paquete externo (pip por
+  HTTPS tendría el mismo problema).
+- Usado en las tres peticiones https del proyecto: `instalador.py`,
+  `ingresos.py`, `estimacion_ingreso.py`.
+- Nuevo `tests/test_red.py`, con un test que reproduce el fallo
+  original (certificado dañado en medio de la lista). 131 tests en
+  verde (antes 127).
+- `CLAUDE.md` y `docs/DECISIONS.md` actualizados.
+
 ## 2026-08-23 (10) — El alias falso de Windows engañaba a la detección de Python
 
 - Confirmado en un Windows real sin Python: `where python` encuentra el

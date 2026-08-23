@@ -31,6 +31,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 import motores
+import red
 
 
 class InstaladorError(Exception):
@@ -145,7 +146,7 @@ def _obtener_release(repo: str) -> dict:
         headers={"User-Agent": _USER_AGENT, "Accept": "application/vnd.github+json"},
     )
     try:
-        with urllib.request.urlopen(peticion, timeout=_TIMEOUT) as respuesta:
+        with urllib.request.urlopen(peticion, timeout=_TIMEOUT, context=red.contexto_https()) as respuesta:
             return json.load(respuesta)
     except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError) as e:
         raise InstaladorError(
@@ -157,7 +158,7 @@ def _obtener_release(repo: str) -> dict:
 def _descargar(url: str, destino: Path) -> None:
     peticion = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
     try:
-        with urllib.request.urlopen(peticion, timeout=_TIMEOUT) as respuesta, open(destino, "wb") as f:
+        with urllib.request.urlopen(peticion, timeout=_TIMEOUT, context=red.contexto_https()) as respuesta, open(destino, "wb") as f:
             shutil.copyfileobj(respuesta, f)
     except (urllib.error.URLError, TimeoutError, OSError) as e:
         raise InstaladorError(f"Falló la descarga desde {url}. Detalle: {e}")

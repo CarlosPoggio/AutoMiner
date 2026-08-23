@@ -66,7 +66,7 @@ def _resp(objeto):
     return _FalsaRespuesta(contenido)
 
 
-def _urlopen_por_url(peticion, timeout=None):
+def _urlopen_por_url(peticion, timeout=None, **_kwargs):
     """Despacha según la URL pedida, como hace el instalador en sus tests."""
     url = peticion.full_url if hasattr(peticion, "full_url") else peticion
     if "api.coingecko.com" in url:
@@ -185,7 +185,7 @@ class TestFuenteCaida(BaseEstimacion):
             "pool": {"blocks": []},
         }
 
-        def urlopen(peticion, timeout=None):
+        def urlopen(peticion, timeout=None, **_kwargs):
             url = peticion.full_url if hasattr(peticion, "full_url") else peticion
             if "coingecko" in url:
                 return _resp(PRECIOS_COINGECKO)
@@ -196,7 +196,7 @@ class TestFuenteCaida(BaseEstimacion):
 
     def test_sin_precio_da_none(self):
         # Las fuentes de dificultad responden, pero CoinGecko no trae el precio.
-        def urlopen(peticion, timeout=None):
+        def urlopen(peticion, timeout=None, **_kwargs):
             url = peticion.full_url if hasattr(peticion, "full_url") else peticion
             if "coingecko" in url:
                 return _resp({})  # sin precios
@@ -210,7 +210,7 @@ class TestCachePrecios(BaseEstimacion):
     def test_precio_se_cachea_una_sola_peticion(self):
         llamadas = {"coingecko": 0}
 
-        def urlopen(peticion, timeout=None):
+        def urlopen(peticion, timeout=None, **_kwargs):
             url = peticion.full_url if hasattr(peticion, "full_url") else peticion
             if "coingecko" in url:
                 llamadas["coingecko"] += 1

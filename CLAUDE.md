@@ -19,7 +19,11 @@ de texto (`config.md`, formato dual `cpu_moneda`/`cpu_wallet`/
 `src/minar.py` también se puede usar solo, sin el formulario, leyendo
 ese fichero.
 
-Módulos en `src/`: `hardware.py` (detecta CPU/GPU), `monedas.py`
+Módulos en `src/`: `red.py` (el `ssl.SSLContext` compartido para toda
+petición HTTPS del proyecto; en Windows carga el almacén de
+certificados del sistema uno a uno para esquivar un fallo conocido de
+Python que puede romper la verificación de certificados en un Windows
+totalmente normal, ver docstring del fichero), `hardware.py` (detecta CPU/GPU), `monedas.py`
 (catálogo de monedas de CPU y GPU, con su comisión y si están
 implementadas), `motores.py` (sabe encontrar cada programa de minado —
 xmrig, kawpowminer, lolMiner — y construir su comando), `instalador.py`

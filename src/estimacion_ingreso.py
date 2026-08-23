@@ -44,6 +44,8 @@ import urllib.error
 import urllib.request
 from dataclasses import dataclass
 
+import red
+
 TIMEOUT_SEGUNDOS = 8
 _UA = "autominer-estimacion/1.0"
 
@@ -90,7 +92,7 @@ class EstimacionReferencia:
 
 def _http_json(url: str):
     peticion = urllib.request.Request(url, headers={"User-Agent": _UA})
-    with urllib.request.urlopen(peticion, timeout=TIMEOUT_SEGUNDOS) as respuesta:
+    with urllib.request.urlopen(peticion, timeout=TIMEOUT_SEGUNDOS, context=red.contexto_https()) as respuesta:
         return json.load(respuesta)
 
 

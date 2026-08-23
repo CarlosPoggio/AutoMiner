@@ -604,3 +604,35 @@ script. Lo mismo para `py`, por si acaso. Probado de nuevo con Python
 real instalado en este ordenador (sigue detectándolo bien) — la
 comprobación completa en un Windows limpio con el alias falso activo
 la hizo Carlos, y con este cambio debería funcionar ya.
+
+## 2026-08-23 (11) — "unable to get local issuer certificate": otro fallo real de un Windows recién instalado
+
+Con Python ya instalado y la app abierta, al pulsar "Comenzar a minar"
+salió un error de certificado SSL al consultar GitHub para descargar
+xmrig. Investigué antes de tocar nada (esta vez sí hay un motivo
+técnico claro, no era el antivirus): es un fallo conocido de Python en
+Windows (bugs.python.org/issue26313). Cuando Python arranca una
+conexión https, intenta cargar de golpe TODOS los certificados de
+confianza del almacén de Windows — y si hay aunque sea uno que Python
+no sepa leer (algo nada raro, hasta en un Windows recién instalado y
+normal), la carga falla ENTERA y se queda sin ningún certificado de
+confianza. Resultado: cualquier conexión https falla con "no se puede
+verificar el certificado", aunque la web sea perfectamente de fiar y
+la conexión a internet funcione bien.
+
+La solución habitual que recomienda la comunidad de Python es instalar
+el paquete externo `certifi` (`pip install certifi`) — pero eso no
+sirve aquí: necesitaría la propia red para instalarse, y si la
+verificación de certificados está rota, esa instalación por HTTPS
+también fallaría (el mismo problema, dando vueltas). Así que se hizo
+sin ningún paquete externo, solo con la librería estándar: nuevo
+`src/red.py`, que en vez de cargar los certificados de Windows todos
+de golpe, los carga **uno a uno** — así uno dañado no se lleva por
+delante a los demás. Se usa en las tres únicas peticiones https del
+proyecto (`instalador.py` para descargar motores, `ingresos.py` y
+`estimacion_ingreso.py` para consultar precios e ingresos).
+
+Probado de verdad: la nueva función funciona contra GitHub en este
+ordenador, y hay un test que reproduce exactamente el fallo original
+(un certificado "dañado" en medio de la lista) para comprobar que ya
+no rompe la carga de los demás.
