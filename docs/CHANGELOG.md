@@ -1,5 +1,26 @@
 # Historial de sesiones
 
+## 2026-08-23 (4) — Sesión local confirmada, y arreglo del "Acceso denegado" al arrancar el motor
+
+- Confirmado que el trabajo en este proyecto ya no ocurre en la sesión
+  en la nube de las primeras sesiones (sin pantalla ni GPU), sino en
+  local, en el propio Windows de Carlos, con pantalla, red y GPU reales
+  (NVIDIA RTX 4060 Laptop, 8GB — detectada en esta misma máquina).
+  Actualizado `CLAUDE.md` para reflejarlo: `formulario.py` sí se puede
+  ejecutar de verdad aquí (aunque sigue sin haber forma de ver la
+  ventana renderizada sin que Carlos la abra o mande una captura), y ya
+  no hay una prohibición general de minar de verdad — solo hacerlo
+  cuando él lo pida.
+- Arreglado un fallo real: al pulsar "Comenzar a minar", si arrancar el
+  motor de minado fallaba (por ejemplo, "Acceso denegado" — muy
+  probablemente el antivirus bloqueando el `.exe` recién descargado,
+  algo habitual con cualquier programa de minado), el hilo de fondo
+  reventaba con una traza en la consola en vez de avisar en la ventana.
+  Ahora se captura (`src/formulario.py` y el `main()` de `src/minar.py`)
+  y se muestra un mensaje claro explicando la causa probable y qué
+  hacer (añadir una excepción en el antivirus para la carpeta `bin/`).
+- Actualizado `docs/DECISIONS.md` con el detalle de ambos cambios.
+
 ## 2026-08-23 (3) — Estimación de ingreso en €/hora (5 de 8 monedas)
 
 - Nuevo `src/estimacion_ingreso.py`: `estimar_referencia(simbolo)`

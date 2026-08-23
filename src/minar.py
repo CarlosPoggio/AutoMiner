@@ -376,7 +376,22 @@ def main():
         print(f"[{bloque.upper()}] Motor: {nombre_motor}" + (f" (comisión del {comision}%)" if comision else " (sin comisión)"))
         print(f"[{bloque.upper()}] Wallet: {wallet_oculta}")
 
-        sesion = iniciar_minado(bloque, info, wallet, sub, raiz_proyecto, bin_path, args.dry_run, on_linea)
+        try:
+            sesion = iniciar_minado(bloque, info, wallet, sub, raiz_proyecto, bin_path, args.dry_run, on_linea)
+        except PermissionError as e:
+            print(
+                f"[{bloque.upper()}] No se pudo arrancar el motor de minado (permiso "
+                f"denegado: {e}). Es muy probable que el antivirus (Windows Defender u "
+                "otro) haya bloqueado o puesto en cuarentena el programa recién "
+                "descargado — es habitual, porque los antivirus marcan los mineros como "
+                "sospechosos aunque sean legítimos. Añade una excepción para la carpeta "
+                "'bin' de este proyecto en tu antivirus y vuelve a intentarlo.",
+                file=sys.stderr,
+            )
+            continue
+        except OSError as e:
+            print(f"[{bloque.upper()}] No se pudo arrancar el motor de minado: {e}", file=sys.stderr)
+            continue
         if sesion is not None:
             sesiones.append(sesion)
 

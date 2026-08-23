@@ -538,11 +538,27 @@ class App(tk.Tk):
                     self.cola.put(("progreso", bloque, f"Error inesperado: {e}"))
                     continue
 
-                sesion = minar.iniciar_minado(
-                    bloque, info, datos["wallet"], {}, RAIZ_PROYECTO, bin_path,
-                    dry_run=False,
-                    on_linea=lambda b, linea: self.cola.put(("linea", b, linea)),
-                )
+                try:
+                    sesion = minar.iniciar_minado(
+                        bloque, info, datos["wallet"], {}, RAIZ_PROYECTO, bin_path,
+                        dry_run=False,
+                        on_linea=lambda b, linea: self.cola.put(("linea", b, linea)),
+                    )
+                except PermissionError as e:
+                    self.cola.put((
+                        "progreso", bloque,
+                        f"No se pudo arrancar el motor de minado (permiso denegado: {e}). "
+                        "Es muy probable que el antivirus (Windows Defender u otro) haya "
+                        "bloqueado o puesto en cuarentena el programa recién descargado — "
+                        "es habitual, porque los antivirus marcan los mineros como "
+                        "sospechosos aunque sean legítimos. Añade una excepción para la "
+                        "carpeta 'bin' de este proyecto en tu antivirus y vuelve a "
+                        "intentarlo.",
+                    ))
+                    continue
+                except OSError as e:
+                    self.cola.put(("progreso", bloque, f"No se pudo arrancar el motor de minado: {e}"))
+                    continue
                 if sesion is not None:
                     self.cola.put(("sesion", sesion, None))
 

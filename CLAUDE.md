@@ -51,10 +51,17 @@ una clave privada o frase semilla real.
 Monedas soportadas hoy por `minar.py` (ver tabla completa en README.md):
 XMR, WOW, ZEPH, SAL, RTM (CPU, motor xmrig) y RVN, KAS, ALPH (GPU,
 motores kawpowminer/lolMiner). Las de GPU están implementadas y con
-tests, pero **nunca probadas contra una GPU real** (este entorno no
-tiene ninguna) — están marcadas como tal en `monedas.py`
-(`tipo == "gpu"` + `soportado_por_minar_hoy == True` implica "sin
-confirmar" por convención) y en la interfaz del formulario (icono 🧪).
+tests, pero **todavía sin confirmar contra una GPU real** — están
+marcadas como tal en `monedas.py` (`tipo == "gpu"` +
+`soportado_por_minar_hoy == True` implica "sin confirmar" por
+convención, vía `OpcionMoneda.confirmado_en_hardware_real` en
+`recomendador.py`, que hoy da por hecho que ninguna GPU está
+confirmada) y en la interfaz del formulario (icono 🧪). El ordenador de
+Carlos SÍ tiene GPU real (NVIDIA RTX 4060 Laptop, 8GB — detectada por
+`hardware.py` en esta misma máquina), así que en cuanto confirme que
+alguna de estas tres mina de verdad, hay que actualizar
+`confirmado_en_hardware_real` (o el dato correspondiente en
+`monedas.py`) para que pase a mostrarse con ✅ en vez de 🧪.
 Añadir una moneda nueva que ya use un motor existente (mismo xmrig,
 kawpowminer o lolMiner) es sencillo; añadir una que necesite un motor
 distinto implica registrarlo primero en `motores.py`, investigando pool,
@@ -81,22 +88,27 @@ instalar nada complicado. Si en el futuro hace falta una librería de
 verdad, añádela a un `requirements.txt` y explica por qué en
 `docs/DECISIONS.md`.
 
-Este entorno de sesión en la nube no tiene pantalla ni el paquete gráfico
-de Tkinter instalado, y no se puede instalar (la red está limitada). Por
-eso `formulario.py` no se puede ejecutar ni probar visualmente aquí: solo
-su lógica interna (con tests). Si se toca ese fichero, verifica con tests
-y `py_compile`, y pide al usuario una captura de pantalla o confirmación
-cuando lo pruebe en su propio ordenador.
+Este proyecto se trabaja con Claude Code **en local**, directamente en el
+Windows de Carlos (`C:\proyectos\autominer`), con pantalla y red reales
+— no es una sesión en la nube sin interfaz. Aun así, no hay forma de ver
+la ventana de Tkinter renderizada desde aquí (no hay herramienta de
+captura para apps nativas de Windows): verifica `formulario.py` con
+tests y `python -m py_compile`, y para la comprobación visual pide a
+Carlos que la abra él y describa qué ve, o que te pase una captura de
+pantalla (puedes leerla como imagen si te da la ruta del fichero).
 
 ## Reglas importantes
 
 - **Nunca subas `config.md` a git** (contiene la wallet real). Ya está en
   `.gitignore`; no lo quites. Usa `config.example.md` como plantilla.
-- **No ejecutes minado real dentro de este entorno de sesión en la nube.**
-  Este entorno es un espacio de trabajo compartido de Anthropic; usarlo
-  para minar de verdad sería un mal uso de ese recurso. Verifica el
-  código con `--dry-run` o con un ejecutable de prueba (ver
-  `docs/DECISIONS.md`), nunca conectándote a un pool real desde aquí.
+- **No arranques minado real por tu cuenta.** Este proyecto corre en el
+  propio ordenador de Carlos (no en un entorno compartido), así que
+  técnicamente sí se podría minar de verdad desde aquí — pero conectarse
+  a un pool real, gastar electricidad y dejar un proceso corriendo es
+  una acción con efectos reales fuera del propio código: solo hazlo si
+  Carlos te lo pide explícitamente en ese momento. Para verificar cambios
+  de código, por defecto usa `--dry-run` o un ejecutable de prueba (ver
+  `docs/DECISIONS.md`).
 - Antes de tocar código, lee este fichero y los `docs/` relevantes.
 - Si el cambio no es trivial, explica el plan en lenguaje simple (qué vas
   a hacer, qué archivos toca, qué alternativas descartaste) y espera

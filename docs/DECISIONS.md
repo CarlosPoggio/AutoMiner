@@ -370,3 +370,50 @@ a ganar tú. Medir tu velocidad real habría requerido ejecutar un
 benchmark del propio motor de minado, que descartamos por ahora para no
 alargar más esta parte (queda como posible mejora futura si algún día
 quieres esa precisión).
+
+## 2026-08-23 (4) — Este proyecto se trabaja en local, no en una sesión en la nube
+
+Las primeras sesiones de este proyecto ocurrieron en un entorno de
+trabajo en la nube de Anthropic sin pantalla ni GPU (por eso hay
+decisiones antiguas, más arriba en este documento, que hablan de "esta
+sesión en la nube" y de comprobar todo con `--dry-run`). Confirmaste que
+esas sesiones se han terminado: ahora se trabaja con Claude Code
+directamente en tu propio ordenador Windows
+(`C:\proyectos\autominer`), con pantalla, red y GPU reales. No se borran
+esas decisiones antiguas (explican bien por qué se hicieron las cosas
+así en su momento), pero desde ahora ya no aplican como limitación: se
+puede ejecutar `formulario.py` de verdad, y se puede minar de verdad
+cuando tú lo pidas (ver `CLAUDE.md`, sección "Reglas importantes", para
+la regla actualizada). Detecté con `hardware.py`, en esta misma máquina,
+una GPU real: NVIDIA RTX 4060 Laptop, 8GB de VRAM — de sobra para RVN,
+KAS y ALPH.
+
+## 2026-08-23 (5) — El motor de minado descargado no arrancaba: "Acceso denegado" (WinError 5)
+
+Al pulsar "Comenzar a minar" en tu ordenador, xmrig se descargó bien
+pero no llegó a arrancar: Windows devolvió "Acceso denegado" al
+intentar ejecutarlo. La causa casi segura no es un fallo de este
+proyecto, sino el antivirus (Windows Defender u otro): los programas de
+minado —y en concreto el fichero `WinRing0x64.sys` que XMRig instala
+para acelerar el cálculo— están entre los más marcados como
+sospechosos por cualquier antivirus, aunque sean legítimos y de código
+abierto. Es tan habitual que la propia documentación oficial de XMRig
+lo advierte. Puede pasar de dos formas: que el antivirus bloquee/ponga
+en cuarentena el `.exe` sin más, o que lo esté escaneando en el mismo
+instante en que la app intenta arrancarlo (un fichero recién
+descargado) y bloquee ese primer intento por eso.
+
+Dos cambios:
+1. **Arreglado un fallo real**: si arrancar el motor fallaba, el hilo de
+   fondo del formulario reventaba con una traza de error en la consola
+   en vez de avisar en la propia ventana. Ahora se captura ese fallo
+   (`PermissionError` y cualquier otro `OSError`) y se muestra un
+   mensaje claro en el registro de la app, con la explicación de arriba
+   y qué hacer.
+2. **Qué hacer tú**: añade una excepción en tu antivirus para la carpeta
+   `bin/` de este proyecto (o para la carpeta completa del proyecto) y
+   vuelve a intentarlo. En Windows Defender: Seguridad de Windows →
+   Protección antivirus y contra amenazas → Administrar configuración →
+   Exclusiones → Agregar una exclusión → Carpeta. También puedes revisar
+   "Historial de protección" ahí mismo para ver si detectó y bloqueó
+   algo en concreto.
