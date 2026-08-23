@@ -105,6 +105,19 @@ class TestIngresos(unittest.TestCase):
             orden = ingresos.clasificar_por_ingreso(["WOW", "XMR", "RTM"], monedas.MONEDAS_CPU)
         self.assertEqual(orden, ["WOW", "XMR", "RTM"])
 
+    def test_clasificar_por_ingreso_cobertura_parcial_usa_reserva(self):
+        # whattomine.com no incluye todas las monedas de este proyecto (por
+        # ejemplo, hoy no trae ninguna de CPU). Si los datos en vivo no
+        # cubren TODAS las monedas comparadas, no hay que mezclar: se cae
+        # entera a la reserva, para no hundir con un valor inventado a la
+        # que falta (antes de arreglar esto, RTM se iba siempre al fondo
+        # aunque en la reserva vaya la primera).
+        falsos_ingresos = {"WOW": 10.0}  # falta XMR y RTM
+        with patch("ingresos.obtener_ingresos_en_vivo", return_value=falsos_ingresos):
+            orden = ingresos.clasificar_por_ingreso(["WOW", "XMR", "RTM"], monedas.MONEDAS_CPU)
+        # orden_respaldo: XMR=1, RTM=2, WOW=4
+        self.assertEqual(orden, ["XMR", "RTM", "WOW"])
+
     def test_parseo_de_json_de_ejemplo(self):
         json_de_ejemplo = {
             "coins": {

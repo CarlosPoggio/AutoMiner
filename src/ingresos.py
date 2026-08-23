@@ -65,10 +65,16 @@ def clasificar_por_ingreso(simbolos: list[str], catalogo: dict) -> list[str]:
     """
     ingresos_en_vivo = obtener_ingresos_en_vivo()
 
-    if ingresos_en_vivo and any(s in ingresos_en_vivo for s in simbolos):
+    # Importante: solo usamos los datos en vivo si cubren TODAS las monedas
+    # que estamos comparando. whattomine.com no incluye todas las monedas
+    # de este proyecto (por ejemplo, ninguna de CPU); si comparásemos con
+    # datos parciales, a las que faltan les tocaría un valor inventado
+    # (antes se usaba -inf, lo que las hundía al fondo del ranking sin
+    # motivo real). Mejor comparar todas con la misma fuente de datos.
+    if ingresos_en_vivo and all(s in ingresos_en_vivo for s in simbolos):
         return sorted(
             simbolos,
-            key=lambda s: ingresos_en_vivo.get(s, float("-inf")),
+            key=lambda s: ingresos_en_vivo[s],
             reverse=True,
         )
 

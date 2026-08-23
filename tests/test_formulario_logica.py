@@ -11,10 +11,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 # corren de verdad.
 try:
     import formulario  # noqa: E402
+    from recomendador import OpcionMoneda  # noqa: E402
     TIENE_FORMULARIO = True
 except Exception as _e:  # pragma: no cover - depende del entorno
     TIENE_FORMULARIO = False
     RAZON = str(_e)
+
+
+def _opcion(simbolo, soportada):
+    return OpcionMoneda(
+        simbolo=simbolo, nombre=simbolo, algoritmo="algo", tipo="cpu",
+        soportado_por_minar_hoy=soportada,
+    )
 
 
 @unittest.skipUnless(TIENE_FORMULARIO, "tkinter no disponible en este entorno")
@@ -60,6 +68,25 @@ class TestConstruirBloquesConfig(unittest.TestCase):
     def test_activa_pero_sin_simbolo_da_none(self):
         cpu, gpu = formulario.construir_bloques_config(True, None, "4wallet", False, None, "")
         self.assertIsNone(cpu)
+
+
+@unittest.skipUnless(TIENE_FORMULARIO, "tkinter no disponible en este entorno")
+class TestFiltrarSoloSoportadas(unittest.TestCase):
+    def test_quita_las_no_soportadas_y_conserva_orden(self):
+        opciones = [_opcion("ERG", False), _opcion("RVN", True), _opcion("ETC", False), _opcion("KAS", True)]
+        filtradas, recomendado = formulario.filtrar_solo_soportadas(opciones)
+        self.assertEqual([o.simbolo for o in filtradas], ["RVN", "KAS"])
+        self.assertEqual(recomendado, "RVN")
+
+    def test_ninguna_soportada_da_lista_vacia(self):
+        filtradas, recomendado = formulario.filtrar_solo_soportadas([_opcion("ERG", False)])
+        self.assertEqual(filtradas, [])
+        self.assertIsNone(recomendado)
+
+    def test_lista_vacia(self):
+        filtradas, recomendado = formulario.filtrar_solo_soportadas([])
+        self.assertEqual(filtradas, [])
+        self.assertIsNone(recomendado)
 
 
 if __name__ == "__main__":

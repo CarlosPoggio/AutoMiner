@@ -34,6 +34,7 @@ from tkinter import ttk
 from hardware import InfoGPU, detectar_cpu, detectar_gpus
 from config_writer import guardar_config
 from recomendador import recomendar_cpu, recomendar_gpu
+from wallets_defecto import cargar_wallets_por_defecto
 import instalador
 import minar
 from minar import MONEDAS_SOPORTADAS
@@ -53,6 +54,20 @@ def _etiqueta_opcion(opcion) -> str:
     else:
         icono = "🧪"  # implementado pero sin confirmar en una GPU real
     return f"{icono} [{opcion.tipo.upper()}] {opcion.nombre} ({opcion.simbolo}) — {opcion.algoritmo}"
+
+
+def filtrar_solo_soportadas(opciones: list) -> tuple[list, str | None]:
+    """
+    Se muestran en los desplegables solo las monedas que minar.py ya sabe
+    arrancar de verdad (soportado_por_minar_hoy). Enseñar en el desplegable
+    una moneda que luego no se puede minar es confuso para alguien que no
+    es técnico. `opciones` ya viene ordenada de mayor a menor ingreso
+    estimado (ver recomendador.recomendar_cpu/recomendar_gpu), así que la
+    recomendación es simplemente la primera que quede tras filtrar.
+    """
+    filtradas = [o for o in opciones if o.soportado_por_minar_hoy]
+    recomendado = filtradas[0].simbolo if filtradas else None
+    return filtradas, recomendado
 
 
 def boton_habilitado(cpu_activa: bool, cpu_wallet: str, gpu_activa: bool, gpu_wallet: str) -> bool:
@@ -104,6 +119,11 @@ class App(tk.Tk):
         self.cpu_activa = tk.BooleanVar(value=False)
         self.gpu_activa = tk.BooleanVar(value=False)
 
+        # Wallets por defecto (wallets.md), para rellenar el campo solo.
+        self.wallets_defecto = cargar_wallets_por_defecto(RAIZ_PROYECTO / "wallets.md")
+        self._ultima_moneda_cpu = None
+        self._ultima_moneda_gpu = None
+
         self.frame_config = None
         self.frame_logs = None
 
@@ -122,8 +142,10 @@ class App(tk.Tk):
                 fabricante="Desconocido",
             )]
 
-        self.opciones_cpu, self.recomendado_cpu = recomendar_cpu(self.cpu)
-        self.opciones_gpu, self.recomendado_gpu = recomendar_gpu(self.gpus)
+        opciones_cpu, _ = recomendar_cpu(self.cpu)
+        opciones_gpu, _ = recomendar_gpu(self.gpus)
+        self.opciones_cpu, self.recomendado_cpu = filtrar_solo_soportadas(opciones_cpu)
+        self.opciones_gpu, self.recomendado_gpu = filtrar_solo_soportadas(opciones_gpu)
 
     def _fabricante_gpu(self) -> str | None:
         for g in self.gpus:
@@ -156,7 +178,7 @@ class App(tk.Tk):
         self.chk_cpu.pack(anchor="w")
         self.combo_cpu = ttk.Combobox(marco_cpu, state="disabled", width=68)
         self.combo_cpu.pack(anchor="w", pady=(6, 2))
-        self.combo_cpu.bind("<<ComboboxSelected>>", lambda e: self._actualizar_boton())
+        self.combo_cpu.bind("<<ComboboxSelected>>", lambda e: self._on_combo_cpu())
         ttk.Label(marco_cpu, text="Tu wallet para la CPU:").pack(anchor="w", pady=(4, 0))
         self.entry_wallet_cpu = ttk.Entry(marco_cpu, width=70, state="disabled")
         self.entry_wallet_cpu.pack(anchor="w", pady=(2, 0))
@@ -186,7 +208,7 @@ class App(tk.Tk):
 
         self.combo_gpu = ttk.Combobox(marco_gpu, state="disabled", width=68)
         self.combo_gpu.pack(anchor="w", pady=(6, 2))
-        self.combo_gpu.bind("<<ComboboxSelected>>", lambda e: self._actualizar_boton())
+        self.combo_gpu.bind("<<ComboboxSelected>>", lambda e: self._on_combo_gpu())
         ttk.Label(marco_gpu, text="Tu wallet para la GPU:").pack(anchor="w", pady=(4, 0))
         self.entry_wallet_gpu = ttk.Entry(marco_gpu, width=70, state="disabled")
         self.entry_wallet_gpu.pack(anchor="w", pady=(2, 0))
@@ -196,7 +218,8 @@ class App(tk.Tk):
 
         ttk.Label(
             marco,
-            text="✅ lista y probada   🧪 lista pero sin confirmar en GPU real   🚧 aún no implementada",
+            text="Solo se muestran monedas que esta app ya sabe minar de verdad. "
+            "✅ probada con hardware real   🧪 lista pero sin confirmar en GPU real",
             foreground="#555555", wraplength=620, justify="left",
         ).pack(anchor="w", pady=(2, 6))
 
@@ -221,37 +244,76 @@ class App(tk.Tk):
         self.txt_hardware.insert("1.0", "\n".join(lineas))
         self.txt_hardware.configure(state="disabled")
 
+    def _fijar_combo(self, combo, opciones, recomendado, mapa_por_etiqueta):
+        """Rellena los valores del combo. Si la moneda que ya tenía elegida
+        el usuario sigue siendo válida, la conserva (para no deshacer su
+        elección cada vez que se vuelve a analizar el hardware); si no,
+        cae en la recomendada."""
+        simbolo_actual = self._simbolo_combo(combo, mapa_por_etiqueta)
+        if simbolo_actual and any(o.simbolo == simbolo_actual for o in opciones):
+            objetivo = simbolo_actual
+        else:
+            objetivo = recomendado
+
+        if objetivo:
+            obj = next(o for o in opciones if o.simbolo == objetivo)
+            combo.set(_etiqueta_opcion(obj))
+        elif opciones:
+            combo.current(0)
+        else:
+            combo.set("")
+
     def _rellenar_combos(self):
         # CPU
         etiquetas_cpu = [_etiqueta_opcion(o) for o in self.opciones_cpu]
         self._opciones_cpu_por_etiqueta = dict(zip(etiquetas_cpu, self.opciones_cpu))
         self.combo_cpu["values"] = etiquetas_cpu
-        if self.recomendado_cpu:
-            obj = next(o for o in self.opciones_cpu if o.simbolo == self.recomendado_cpu)
-            self.combo_cpu.set(_etiqueta_opcion(obj))
-        elif etiquetas_cpu:
-            self.combo_cpu.current(0)
+        self._fijar_combo(self.combo_cpu, self.opciones_cpu, self.recomendado_cpu, self._opciones_cpu_por_etiqueta)
 
         # GPU
         etiquetas_gpu = [_etiqueta_opcion(o) for o in self.opciones_gpu]
         self._opciones_gpu_por_etiqueta = dict(zip(etiquetas_gpu, self.opciones_gpu))
         self.combo_gpu["values"] = etiquetas_gpu
-        if self.recomendado_gpu:
-            obj = next(o for o in self.opciones_gpu if o.simbolo == self.recomendado_gpu)
-            self.combo_gpu.set(_etiqueta_opcion(obj))
-        elif etiquetas_gpu:
-            self.combo_gpu.current(0)
-        else:
-            self.combo_gpu.set("")
+        self._fijar_combo(self.combo_gpu, self.opciones_gpu, self.recomendado_gpu, self._opciones_gpu_por_etiqueta)
 
         if not self.opciones_gpu:
             self.lbl_gpu_vacia.configure(
-                text="No se detectó ninguna GPU con memoria suficiente. Si tienes "
-                "una tarjeta dedicada, marca la casilla de arriba e indica su VRAM."
+                text="No hay ninguna moneda de GPU disponible ahora mismo: puede ser "
+                "que no se haya detectado bien tu tarjeta (marca la casilla de "
+                "abajo e indica su VRAM), que no tenga memoria suficiente, o que "
+                "esta app todavía no sepa minar ninguna moneda compatible con ella."
             )
             self.gpu_activa.set(False)
         else:
             self.lbl_gpu_vacia.configure(text="")
+
+        self._autorrellenar_wallet_si_cambio("cpu", self.combo_cpu, self._opciones_cpu_por_etiqueta, self.entry_wallet_cpu)
+        self._autorrellenar_wallet_si_cambio("gpu", self.combo_gpu, self._opciones_gpu_por_etiqueta, self.entry_wallet_gpu)
+
+    def _autorrellenar_wallet_si_cambio(self, bloque: str, combo, mapa_opciones, entry):
+        """Si la moneda elegida en `combo` ha cambiado de verdad respecto a
+        la última vez, y tiene wallet en wallets.md, la pone en `entry`
+        (sustituyendo lo que hubiera antes). Si la moneda es la misma que
+        ya estaba, no toca `entry` — así no se borra lo que el usuario
+        haya escrito a mano al reanalizar el hardware sin cambiar de
+        moneda (por ejemplo, al indicar la VRAM manualmente)."""
+        atributo = f"_ultima_moneda_{bloque}"
+        simbolo = self._simbolo_combo(combo, mapa_opciones)
+        if simbolo == getattr(self, atributo):
+            return
+        setattr(self, atributo, simbolo)
+        wallet = self.wallets_defecto.get(simbolo, "") if simbolo else ""
+        entry.delete(0, "end")
+        if wallet:
+            entry.insert(0, wallet)
+
+    def _on_combo_cpu(self):
+        self._autorrellenar_wallet_si_cambio("cpu", self.combo_cpu, self._opciones_cpu_por_etiqueta, self.entry_wallet_cpu)
+        self._actualizar_boton()
+
+    def _on_combo_gpu(self):
+        self._autorrellenar_wallet_si_cambio("gpu", self.combo_gpu, self._opciones_gpu_por_etiqueta, self.entry_wallet_gpu)
+        self._actualizar_boton()
 
     def _reanalizar(self):
         self._detectar()

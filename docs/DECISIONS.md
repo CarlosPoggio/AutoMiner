@@ -263,3 +263,57 @@ repositorio oficial del proyecto en GitHub, que es la misma fuente que
 usaría cualquier persona si lo descargara a mano. Si en el futuro
 quieres ese nivel extra de comprobación, se puede añadir para XMRig y
 kawpowminer.
+
+## 2026-08-23 — Solo se muestran monedas ya minables, y se corrige un fallo real en "la de mayor ingreso"
+
+Probaste la app y viste dos problemas: los desplegables mostraban
+monedas que la app en realidad no sabe minar todavía, y la moneda
+preseleccionada no siempre parecía la más lógica. Investigando el
+segundo problema encontré un fallo real en el código, no solo una
+cuestión de gusto:
+
+`ingresos.py` intenta comparar el ingreso estimado de todas las monedas
+candidatas usando datos en vivo de whattomine.com. El problema es que
+esa web, hoy, **no incluye ninguna de las monedas de CPU de este
+proyecto** (ni Monero) **y solo una de las tres de GPU** (Ravencoin; le
+faltan Kaspa y Alephium). El código antiguo, en cuanto encontraba
+aunque fuera un solo dato en vivo entre las candidatas, comparaba TODAS
+con esos datos — y a las que no tenían dato en vivo (casi todas) las
+mandaba automáticamente al final de la lista, como si ganaran cero,
+en vez de usar el ranking de reserva que sí las tiene en cuenta. En la
+práctica esto hacía que Ravencoin saliera casi siempre recomendada por
+delante de Kaspa o Alephium, aunque no fuera la que más rinde. Ahora
+solo se usan los datos en vivo cuando cubren a TODAS las monedas que se
+están comparando; si falta alguna, se compara el grupo entero con el
+ranking de reserva, para no mezclar una fuente real con un cero
+inventado.
+
+Además, el desplegable ahora solo enseña monedas con
+`soportado_por_minar_hoy: True` (las de la tabla del README). Antes se
+mostraba el catálogo entero (más de una docena de monedas investigadas
+pero sin motor de minado todavía) mezclado con las que sí funcionan; era
+información útil para mí como referencia, pero confusa para ti como
+usuario final de la app: podías elegir una moneda que luego no arrancaba
+de verdad. El catálogo completo se sigue pudiendo consultar en
+`src/monedas.py` para cuando se añada soporte a alguna más.
+
+## 2026-08-23 — `wallets.md`: un fichero con tus wallets por defecto, y sí se sube a git
+
+Pediste poder guardar tus wallets por moneda directamente en un fichero
+del repositorio, para que el formulario las rellene solas. Esto podría
+sonar contradictorio con la regla de "nunca subas tu wallet a git" de
+`config.md` — pero no lo es, y merece explicarse: esa regla es sobre
+`config.md` en concreto porque en su momento se trató la wallet como un
+dato sensible por precaución, pero una dirección de wallet (donde
+RECIBES el dinero minado) es pública por diseño: en cuanto te llega un
+pago, cualquiera puede verla en la cadena de bloques, igual que un
+número de cuenta que le das a alguien para que te pague. Lo que nunca
+debe subirse a ningún sitio es tu **clave privada** o **frase semilla**
+(lo que demuestra que ERES el dueño de la wallet y te permite gastar el
+dinero) — eso sí es secreto, y no tiene nada que ver con la dirección.
+
+Por eso `wallets.md` es un fichero nuevo, distinto de `config.md`: vive
+en la raíz del proyecto, con líneas `SIMBOLO: direccion`, y sí se sube a
+GitHub sin problema. El formulario lo lee al abrir y rellena el campo de
+wallet correspondiente en cuanto eliges esa moneda (si no hay wallet
+guardada para ella, el campo se queda vacío, como hasta ahora).

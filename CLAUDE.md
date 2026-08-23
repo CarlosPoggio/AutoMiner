@@ -28,10 +28,20 @@ oficial de GitHub y lo deja listo en `bin/`), `ingresos.py` (ranking de
 ingresos, en vivo o de reserva), `recomendador.py` (junta hardware +
 catálogo + ingresos; `recomendar_cpu`/`recomendar_gpu` separan las
 opciones de cada componente), `config_writer.py` (escribe `config.md`
-en formato dual), `formulario.py` (la ventana: configuración + arranque
-+ logs, todo en una sola app), `minar.py` (parsea/valida `config.md`,
-sabe arrancar CPU y GPU a la vez como procesos concurrentes, e
-interpreta su salida en `interpretar_linea`).
+en formato dual), `wallets_defecto.py` (lee `wallets.md`, ver más abajo),
+`formulario.py` (la ventana: solo muestra monedas ya minables, con la de
+mayor ingreso preseleccionada y la wallet rellenada sola si está en
+`wallets.md`; configuración + arranque + logs, todo en una sola app),
+`minar.py` (parsea/valida `config.md`, sabe arrancar CPU y GPU a la vez
+como procesos concurrentes, e interpreta su salida en
+`interpretar_linea`).
+
+`wallets.md` (en la raíz del repo) guarda las wallets por defecto de
+Carlos, una por moneda (`SIMBOLO: direccion`). A diferencia de
+`config.md`, **este fichero SÍ se sube a git**: una dirección de wallet
+es la que recibe el dinero, así que es pública por diseño (no es una
+clave privada). Si se toca este fichero, nunca hay que escribir en él
+una clave privada o frase semilla real.
 
 Monedas soportadas hoy por `minar.py` (ver tabla completa en README.md):
 XMR, WOW, ZEPH, SAL, RTM (CPU, motor xmrig) y RVN, KAS, ALPH (GPU,

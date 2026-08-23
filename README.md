@@ -32,10 +32,16 @@ falta, desde la página oficial del proyecto correspondiente en GitHub
    ```
 
 2. Verás tu CPU y tu GPU detectadas, cada una con su propio desplegable
-   de monedas (solo las que tu hardware puede minar) y su propio campo
-   de wallet. Marca la casilla de CPU y/o de GPU, elige la moneda y
-   escribe tu wallet en cada bloque que quieras usar — puedes minar solo
-   con la CPU, solo con la GPU, o con las dos a la vez.
+   — solo con las monedas que esta app ya sabe minar de verdad y que tu
+   hardware puede minar — con la de mayor ingreso estimado ya
+   preseleccionada, y su propio campo de wallet. Marca la casilla de
+   CPU y/o de GPU, revisa (o cambia) la moneda y escribe tu wallet en
+   cada bloque que quieras usar — puedes minar solo con la CPU, solo
+   con la GPU, o con las dos a la vez.
+
+   Si rellenas `wallets.md` (en la raíz del proyecto) con tus
+   direcciones por defecto, el campo de wallet se rellena solo al
+   elegir esa moneda — puedes cambiarlo a mano si quieres usar otra.
 3. Pulsa "Comenzar a minar". La app guarda `config.md`, instala el
    motor que falte si hace falta, y arranca a minar — verás un registro
    en vivo traducido a lenguaje sencillo (conectado al pool, velocidad,
@@ -43,7 +49,10 @@ falta, desde la página oficial del proyecto correspondiente en GitHub
    completo si lo necesitas.
 4. Para detener el minado, pulsa "Detener minado" en esa misma ventana.
 
-Monedas que ya se pueden minar así hoy:
+Monedas que ya se pueden minar así hoy (son las únicas que verás en los
+desplegables; el resto del catálogo, más de una docena de monedas
+investigadas pero sin motor de minado todavía, se queda fuera de la app
+para no confundir, hasta que se implementen):
 
 | Moneda | Tipo | Motor | Comisión | Probado con hardware real |
 |---|---|---|---|---|
@@ -61,10 +70,8 @@ Monedas que ya se pueden minar así hoy:
 tarjeta gráfica real, porque se desarrolló en un entorno sin GPU.
 Pruébalo en tu ordenador y cuenta qué tal ha ido.
 
-Si eliges en el desplegable alguna otra moneda del catálogo (marcada
-🚧), `config.md` se genera igual, pero la app te avisará de que todavía
-no sabe arrancarla de verdad — pide que se añada su motor de minado
-cuando quieras usarla.
+Si quieres minar alguna otra moneda del catálogo más amplio (ver
+`src/monedas.py`), pide que se añada su motor de minado primero.
 
 ## Uso avanzado: sin el formulario
 

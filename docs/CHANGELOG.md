@@ -1,5 +1,33 @@
 # Historial de sesiones
 
+## 2026-08-23 (2) — Solo monedas minables, wallets por defecto, y arreglo de un bug real de recomendación
+
+- `src/formulario.py`: los desplegables de CPU y GPU ahora solo muestran
+  monedas con `soportado_por_minar_hoy: True` (nueva
+  `filtrar_solo_soportadas`), con la de mayor ingreso estimado
+  preseleccionada.
+- `src/ingresos.py`: corregido un bug real en `clasificar_por_ingreso`.
+  whattomine.com no incluye hoy ninguna moneda de CPU ni Kaspa/Alephium
+  de GPU; el código antiguo, con datos en vivo parciales, mandaba a esas
+  monedas al fondo del ranking como si valieran cero (`any` en vez de
+  `all` al comprobar cobertura). Corregido: si los datos en vivo no
+  cubren TODAS las monedas comparadas, se usa el ranking de reserva
+  completo en su lugar. Nuevo test cubre el caso.
+- Nuevo `wallets.md` (raíz del repo, **sí se sube a git** — una wallet
+  es una dirección pública, no una clave privada) + `src/wallets_defecto.py`:
+  el formulario rellena solo el campo de wallet al elegir una moneda, si
+  hay una guardada ahí.
+- `src/formulario.py`: al reanalizar el hardware (por ejemplo, al marcar
+  la VRAM manual de la GPU), ya no se pierde la moneda que tenías
+  elegida ni la wallet que hubieras escrito a mano, si seguía siendo una
+  opción válida (antes se reiniciaba todo al valor recomendado).
+- Añadidas 7 pruebas nuevas (94 en total): `test_wallets_defecto.py`, y
+  ampliados `test_formulario_logica.py` y
+  `test_hardware_monedas_recomendador.py`.
+- Nuevo `Iniciar minado.bat` en la raíz: doble click en Windows para
+  abrir la app sin necesidad de terminal.
+- Actualizados README.md, CLAUDE.md y docs/DECISIONS.md.
+
 ## 2026-08-23 — App única: elige, instala y mina sin salir de la ventana
 
 - Nuevo `src/instalador.py`: descarga automática del motor de minado
