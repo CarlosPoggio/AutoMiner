@@ -72,3 +72,12 @@ Términos técnicos usados en este proyecto, explicados en una línea.
   (aquí se usa para consultar ingresos de minado en tiempo real).
 - **JSON**: un formato de texto muy común para intercambiar datos entre
   programas.
+- **Release (de GitHub)**: la versión oficial y ya lista para descargar
+  de un programa, publicada por quien lo hace. Aquí se usa para bajar
+  automáticamente el motor de minado correcto desde su web oficial.
+- **Proceso**: un programa en marcha en tu ordenador. Cuando "Comenzar a
+  minar" arranca CPU y GPU a la vez, en realidad arranca dos procesos
+  distintos (uno por motor de minado).
+- **Hilo (thread)**: una "tarea en paralelo" dentro de un mismo
+  programa. Se usa para leer el registro del minado sin congelar la
+  ventana mientras se muestra en pantalla.

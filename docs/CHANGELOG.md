@@ -1,5 +1,46 @@
 # Historial de sesiones
 
+## 2026-08-23 — App única: elige, instala y mina sin salir de la ventana
+
+- Nuevo `src/instalador.py`: descarga automática del motor de minado
+  (xmrig/kawpowminer/lolMiner) desde su release oficial de GitHub
+  cuando falta, eligiendo el archivo correcto según sistema operativo
+  y, para kawpowminer, según el fabricante de la GPU (NVIDIA vs. resto).
+- `src/config_writer.py` y `config.md`/`config.example.md` pasan a un
+  formato dual (`cpu_moneda`/`cpu_wallet` y `gpu_moneda`/`gpu_wallet`,
+  ambos bloques opcionales, al menos uno obligatorio) en vez de una
+  única moneda/wallet global.
+- `src/recomendador.py`: nuevas `recomendar_cpu`/`recomendar_gpu` para
+  dar opciones y recomendación por separado a cada componente.
+- `src/minar.py`: valida cada bloque por separado, sabe arrancar CPU y
+  GPU como procesos concurrentes (`SesionMinado`, `iniciar_minado`) y
+  traduce la salida cruda de los motores a mensajes en español legibles
+  (`interpretar_linea`); el CLI (`--dry-run` incluido) sigue funcionando
+  para quien no quiera usar la ventana.
+- `src/formulario.py` reescrito por completo: una única ventana con
+  bloque de CPU y bloque de GPU independientes (desplegable + wallet
+  cada uno), y el botón "Comenzar a minar" ya no solo guarda
+  `config.md` — instala lo que falte y arranca a minar de verdad, con
+  una vista de registro en vivo (interpretado por defecto, con opción
+  de ver el log técnico completo) y botón para detener el minado.
+- Se corrigió `.gitignore` (antes solo ignoraba `bin/xmrig`/`xmrig.exe`;
+  ahora ignora todo `bin/` salvo `LEEME.md`, para cubrir también
+  kawpowminer, lolMiner y las carpetas que crea la descarga automática)
+  y se actualizaron `bin/LEEME.md`, `README.md` y `CLAUDE.md` para
+  reflejar que ya no hace falta instalar nada a mano.
+- Añadidas 87 pruebas en total (antes 71): nuevas `test_instalador.py`
+  y `test_formulario_logica.py`, y ampliadas `test_minar.py` y
+  `test_hardware_monedas_recomendador.py` para el formato dual, la
+  interpretación de logs y el arranque de sesiones (todo con mocks de
+  red y de `subprocess`, sin descargar binarios reales ni conectarse a
+  ningún pool).
+- Pendiente de tu confirmación en tu propio ordenador (aquí no hay
+  pantalla ni se puede minar de verdad): que la ventana se vea y
+  funcione bien, que la descarga real de un motor funcione la primera
+  vez, y que el minado de GPU (RVN/KAS/ALPH, marcadas 🧪) funcione
+  contra hardware real.
+
+
 ## 2026-08-20 — 3 monedas de GPU más (Ravencoin, Kaspa, Alephium)
 
 - Se creó `src/motores.py`: un registro que sabe encontrar y arrancar

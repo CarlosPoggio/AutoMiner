@@ -23,7 +23,9 @@ import argparse
 import re
 import subprocess
 import sys
+import threading
 from pathlib import Path
+from typing import Callable
 
 import motores
 
@@ -133,14 +135,27 @@ def parsear_config(ruta: Path) -> dict:
     return datos
 
 
-def validar(datos: dict) -> tuple[str, str, dict]:
-    wallet = datos.get("wallet", "")
-    moneda_raw = datos.get("moneda", "")
+def _subdatos_bloque(bloque: str, datos: dict) -> dict:
+    """Extrae las claves de un bloque quitándoles el prefijo. Por ejemplo,
+    para bloque='cpu': 'cpu_pool' -> 'pool', 'cpu_hilos' -> 'hilos'. Así
+    motores.construir_comando recibe las claves que ya entiende."""
+    prefijo = bloque + "_"
+    return {k[len(prefijo):]: v for k, v in datos.items() if k.startswith(prefijo)}
 
+
+def _validar_bloque(bloque: str, datos: dict) -> tuple[str, str, dict] | None:
+    """Valida un bloque ('cpu' o 'gpu'). Devuelve (wallet, moneda, subdatos)
+    si el bloque está presente y completo; None si no está presente. Lanza
+    ValueError si está a medias o la moneda no encaja con el bloque."""
+    moneda_raw = datos.get(f"{bloque}_moneda", "")
+    wallet = datos.get(f"{bloque}_wallet", "")
+
+    if not moneda_raw and not wallet:
+        return None  # bloque ausente: es válido no usar la CPU o la GPU
     if not wallet:
-        raise ValueError("Falta la línea 'wallet:' en el fichero de configuración.")
+        raise ValueError(f"Falta la línea '{bloque}_wallet:' en el fichero de configuración.")
     if not moneda_raw:
-        raise ValueError("Falta la línea 'moneda:' en el fichero de configuración.")
+        raise ValueError(f"Falta la línea '{bloque}_moneda:' en el fichero de configuración.")
 
     moneda = resolver_moneda(moneda_raw)
     if moneda is None:
@@ -153,6 +168,12 @@ def validar(datos: dict) -> tuple[str, str, dict]:
         )
 
     info = MONEDAS_SOPORTADAS[moneda]
+    es_gpu = bool(info.get("gpu"))
+    if bloque == "cpu" and es_gpu:
+        raise ValueError(f"La moneda '{moneda}' es de GPU; no puede ir en el bloque de CPU.")
+    if bloque == "gpu" and not es_gpu:
+        raise ValueError(f"La moneda '{moneda}' es de CPU; no puede ir en el bloque de GPU.")
+
     patron = info["wallet_regex"]
     if not re.match(patron, wallet):
         print(
@@ -161,7 +182,25 @@ def validar(datos: dict) -> tuple[str, str, dict]:
             file=sys.stderr,
         )
 
-    return wallet, moneda, datos
+    return wallet, moneda, _subdatos_bloque(bloque, datos)
+
+
+def validar(datos: dict) -> dict:
+    """Valida el fichero completo. Devuelve un diccionario
+    {bloque: (wallet, moneda, subdatos)} con los bloques presentes (uno o
+    los dos). Lanza ValueError si no hay ningún bloque completo."""
+    bloques = {}
+    for bloque in ("cpu", "gpu"):
+        resultado = _validar_bloque(bloque, datos)
+        if resultado is not None:
+            bloques[bloque] = resultado
+
+    if not bloques:
+        raise ValueError(
+            "El fichero de configuración no tiene ningún bloque completo. "
+            "Hace falta al menos cpu_moneda + cpu_wallet o gpu_moneda + gpu_wallet."
+        )
+    return bloques
 
 
 def encontrar_motor(moneda: str, raiz_proyecto: Path) -> str | None:
@@ -177,6 +216,124 @@ def construir_comando(bin_path: str, wallet: str, moneda: str, datos: dict) -> l
     cmd = motores.construir_comando(info["motor"], bin_path, wallet, pool, info["algo"], datos)
     cmd += info.get("extra_args", [])
     return cmd
+
+
+class SesionMinado:
+    """Envuelve un proceso de minado en marcha (un Popen) más el hilo que
+    lee su salida línea a línea. Permite detenerlo de forma limpia."""
+
+    def __init__(self, proceso: subprocess.Popen, hilo_lector: threading.Thread | None, bloque: str):
+        self.proceso = proceso
+        self.hilo_lector = hilo_lector
+        self.bloque = bloque
+
+    def detener(self, timeout: float = 5.0) -> None:
+        """Pide al proceso que termine; si no lo hace en `timeout` segundos,
+        lo mata a la fuerza."""
+        if self.proceso.poll() is None:
+            self.proceso.terminate()
+            try:
+                self.proceso.wait(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                self.proceso.kill()
+                self.proceso.wait()
+        if self.hilo_lector is not None:
+            self.hilo_lector.join(timeout=timeout)
+
+    def esperar(self) -> None:
+        """Bloquea hasta que el proceso termina por sí solo."""
+        self.proceso.wait()
+        if self.hilo_lector is not None:
+            self.hilo_lector.join()
+
+
+def iniciar_minado(
+    bloque: str,
+    moneda_info: dict,
+    wallet: str,
+    datos: dict,
+    raiz_proyecto: Path,
+    bin_path: str,
+    dry_run: bool,
+    on_linea: Callable[[str, str], None],
+) -> SesionMinado | None:
+    """Arranca el minado de un bloque ('cpu' o 'gpu').
+
+    En dry_run no arranca ningún proceso: solo llama una vez a on_linea con
+    el comando que se ejecutaría y devuelve None. En modo real arranca el
+    proceso, lanza un hilo que lee su salida y llama a on_linea(bloque,
+    linea_cruda) por cada línea, y devuelve la SesionMinado."""
+    nombre_motor = moneda_info["motor"]
+    pool = datos.get("pool", moneda_info["pool_por_defecto"])
+    cmd = motores.construir_comando(nombre_motor, bin_path, wallet, pool, moneda_info["algo"], datos)
+    cmd += moneda_info.get("extra_args", [])
+
+    if dry_run:
+        on_linea(bloque, f"[dry-run] Comando que se ejecutaría: {' '.join(cmd)}")
+        return None
+
+    proceso = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
+    )
+
+    def leer():
+        try:
+            for linea in proceso.stdout:
+                on_linea(bloque, linea.rstrip("\n"))
+        finally:
+            if proceso.stdout is not None:
+                proceso.stdout.close()
+
+    hilo = threading.Thread(target=leer, daemon=True)
+    hilo.start()
+    return SesionMinado(proceso, hilo, bloque)
+
+
+def interpretar_linea(linea_cruda: str) -> str | None:
+    """Traduce una línea de salida cruda de xmrig/kawpowminer/lolMiner a un
+    mensaje legible en español. Devuelve None si la línea es "ruido" que no
+    merece mostrarse en el log sencillo (sí seguirá en el log completo)."""
+    l = linea_cruda.lower()
+    if "accepted" in l:
+        return "✅ Comparto aceptado por el pool"
+    if "rejected" in l:
+        return "⚠️ Comparto rechazado por el pool"
+    if "new job" in l:
+        return "📥 Nuevo trabajo recibido del pool"
+    if "speed" in l:
+        idx = l.index("speed")
+        resto = linea_cruda[idx:].strip()
+        return f"⚡ Velocidad: {resto}" if resto else f"⚡ Velocidad: {linea_cruda.strip()}"
+    # Los errores se comprueban antes que "connect" porque una línea de
+    # "connection error" contiene ambas palabras y debe salir como error.
+    if "error" in l or "fail" in l:
+        return "❌ " + linea_cruda
+    if "connect" in l:
+        return "🔌 Conectado al pool"
+    return None
+
+
+def _preparar_bin(bloque: str, moneda: str, raiz_proyecto: Path, dry_run: bool, on_linea) -> str | None:
+    """Localiza (o descarga) el ejecutable del motor de este bloque.
+    Devuelve la ruta, o None si no se pudo preparar (ya avisado)."""
+    nombre_motor = MONEDAS_SOPORTADAS[moneda]["motor"]
+    bin_path = encontrar_motor(moneda, raiz_proyecto)
+    if bin_path is not None:
+        return bin_path
+    if dry_run:
+        # En dry-run no descargamos nada: mostramos el comando con un
+        # marcador de posición en lugar de la ruta real.
+        return f"<{nombre_motor}>"
+    try:
+        import instalador
+
+        return instalador.asegurar_motor(
+            nombre_motor, raiz_proyecto,
+            on_progreso=lambda m: on_linea(bloque, m),
+        )
+    except Exception as e:  # incluye InstaladorError
+        print(f"[{bloque.upper()}] No pude preparar el motor '{nombre_motor}': {e}", file=sys.stderr)
+        return None
 
 
 def main():
@@ -196,38 +353,49 @@ def main():
 
     try:
         datos = parsear_config(ruta_config)
-        wallet, moneda, datos = validar(datos)
+        bloques = validar(datos)
     except (FileNotFoundError, ValueError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
-    nombre_motor = MONEDAS_SOPORTADAS[moneda]["motor"]
-    bin_path = encontrar_motor(moneda, raiz_proyecto)
-    if bin_path is None:
-        nombres = motores.MOTORES[nombre_motor]["nombres_binario"]
-        print(
-            f"No encuentro el motor de minado '{nombre_motor}' instalado "
-            f"(busco: {', '.join(nombres)}). Descárgalo, ponlo en tu PATH "
-            f"o en la carpeta bin/ de este proyecto, y vuelve a intentarlo.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
+    def on_linea(bloque: str, linea: str) -> None:
+        print(f"[{bloque.upper()}] {linea}")
 
-    cmd = construir_comando(bin_path, wallet, moneda, datos)
+    sesiones = []
+    for bloque, (wallet, moneda, sub) in bloques.items():
+        info = MONEDAS_SOPORTADAS[moneda]
+        nombre_motor = info["motor"]
 
-    comision = motores.MOTORES[nombre_motor]["comision_pct"]
-    wallet_oculta = f"{wallet[:6]}...{wallet[-4:]}" if len(wallet) > 12 else wallet
-    print(f"Moneda: {MONEDAS_SOPORTADAS[moneda]['nombre']} ({moneda})")
-    print(f"Motor: {nombre_motor}" + (f" (comisión del {comision}%)" if comision else " (sin comisión)"))
-    print(f"Wallet: {wallet_oculta}")
-    print(f"Comando: {' '.join(cmd)}")
+        bin_path = _preparar_bin(bloque, moneda, raiz_proyecto, args.dry_run, on_linea)
+        if bin_path is None:
+            continue
+
+        comision = motores.MOTORES[nombre_motor]["comision_pct"]
+        wallet_oculta = f"{wallet[:6]}...{wallet[-4:]}" if len(wallet) > 12 else wallet
+        print(f"[{bloque.upper()}] Moneda: {info['nombre']} ({moneda})")
+        print(f"[{bloque.upper()}] Motor: {nombre_motor}" + (f" (comisión del {comision}%)" if comision else " (sin comisión)"))
+        print(f"[{bloque.upper()}] Wallet: {wallet_oculta}")
+
+        sesion = iniciar_minado(bloque, info, wallet, sub, raiz_proyecto, bin_path, args.dry_run, on_linea)
+        if sesion is not None:
+            sesiones.append(sesion)
 
     if args.dry_run:
         print("\n[dry-run] No se ha iniciado ningún proceso de minado real.")
         return
 
-    print("\nIniciando minado... (Ctrl+C para detener)")
-    subprocess.run(cmd)
+    if not sesiones:
+        print("No se pudo arrancar ningún motor de minado.", file=sys.stderr)
+        sys.exit(1)
+
+    print("\nMinando... (Ctrl+C para detener)")
+    try:
+        for sesion in sesiones:
+            sesion.esperar()
+    except KeyboardInterrupt:
+        print("\nDeteniendo el minado...")
+        for sesion in sesiones:
+            sesion.detener()
 
 
 if __name__ == "__main__":

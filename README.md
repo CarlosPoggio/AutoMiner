@@ -1,43 +1,47 @@
 # Minero Cripto
 
-Herramienta personal para iniciar el minado de una criptomoneda escribiendo
-solo tu wallet y la moneda en un fichero de texto.
+Herramienta personal para minar criptomonedas (CPU y/o GPU) con tu
+propia wallet, desde una única ventana: analiza tu ordenador, tú eliges
+qué monedas minar y pulsas "Comenzar a minar" — la app se encarga de
+todo lo demás, incluido instalar el programa de minado que haga falta.
 
 ## Antes de empezar (en tu ordenador, no aquí)
 
-Este repositorio por sí solo no basta para minar: hacen falta dos cosas
-más, que no vienen incluidas a propósito (ver `docs/DECISIONS.md`):
+Solo hace falta **Python 3** instalado (ver `docs/DECISIONS.md`):
 
-1. **Python 3** instalado en tu ordenador. En Mac y Linux suele venir de
-   serie; en Windows hay que instalarlo desde python.org (marca la
-   casilla "Add to PATH" durante la instalación). En Linux, si al abrir
-   el formulario da un error de Tkinter, instala el paquete del sistema
-   `python3-tk` (por ejemplo `sudo apt install python3-tk`).
-2. **El motor de minado** (XMRig, kawpowminer o lolMiner según la
-   moneda — ver tabla más abajo), descargado por separado desde su web
-   oficial y colocado en la carpeta `bin/` de este proyecto o en tu PATH.
-   Instrucciones en `bin/LEEME.md`.
+- En Mac y Linux suele venir de serie.
+- En Windows hay que instalarlo desde python.org (marca la casilla "Add
+  to PATH" durante la instalación).
+- En Linux, si al abrir el formulario da un error de Tkinter, instala el
+  paquete del sistema `python3-tk` (por ejemplo `sudo apt install
+  python3-tk`).
 
-## Uso rápido
+No hace falta instalar el motor de minado (XMRig, kawpowminer o
+lolMiner) a mano: la app lo descarga sola la primera vez que hace
+falta, desde la página oficial del proyecto correspondiente en GitHub
+(ver `src/instalador.py` y `bin/LEEME.md` si prefieres instalarlo tú).
 
-### Opción A: con el formulario (recomendado)
+## Uso
 
-1. Ejecuta `python3 src/formulario.py`. Se abrirá una ventana que analiza
-   tu ordenador, te dice qué criptomonedas puedes minar con tu hardware
-   y te deja preseleccionada la de mayor ingreso estimado.
-2. Escribe tu wallet y pulsa "Guardar configuración". **Esto solo crea
-   `config.md`; todavía no empieza a minar.**
-3. Para minar de verdad, con el motor ya instalado (paso anterior),
-   ejecuta en una terminal, dentro de la carpeta del proyecto:
+1. Ejecuta:
 
    ```
-   python3 src/minar.py
+   python3 src/formulario.py
    ```
 
-   Verás el hashrate subir en pantalla: eso confirma que está minando.
-   Para detenerlo, Ctrl+C.
+2. Verás tu CPU y tu GPU detectadas, cada una con su propio desplegable
+   de monedas (solo las que tu hardware puede minar) y su propio campo
+   de wallet. Marca la casilla de CPU y/o de GPU, elige la moneda y
+   escribe tu wallet en cada bloque que quieras usar — puedes minar solo
+   con la CPU, solo con la GPU, o con las dos a la vez.
+3. Pulsa "Comenzar a minar". La app guarda `config.md`, instala el
+   motor que falte si hace falta, y arranca a minar — verás un registro
+   en vivo traducido a lenguaje sencillo (conectado al pool, velocidad,
+   comparte aceptados...). Hay una casilla para ver el log técnico
+   completo si lo necesitas.
+4. Para detener el minado, pulsa "Detener minado" en esa misma ventana.
 
-Hoy en día `minar.py` ya sabe arrancar 8 monedas:
+Monedas que ya se pueden minar así hoy:
 
 | Moneda | Tipo | Motor | Comisión | Probado con hardware real |
 |---|---|---|---|---|
@@ -50,34 +54,34 @@ Hoy en día `minar.py` ya sabe arrancar 8 monedas:
 | Kaspa (KAS) | GPU | lolMiner | 0,75% | 🧪 sin confirmar |
 | Alephium (ALPH) | GPU | lolMiner | 0,75% | 🧪 sin confirmar |
 
-"Sin confirmar" significa: el comando que genera `minar.py` está
-comprobado (con un programa de prueba), pero nunca se ha ejecutado
-contra una tarjeta gráfica real, porque se desarrolló en un entorno sin
-GPU. Pruébalo en tu ordenador y cuenta qué tal ha ido.
+"Sin confirmar" significa: el comando que se genera está comprobado
+(con un programa de prueba), pero nunca se ha ejecutado contra una
+tarjeta gráfica real, porque se desarrolló en un entorno sin GPU.
+Pruébalo en tu ordenador y cuenta qué tal ha ido.
 
-Si el formulario recomienda alguna otra moneda de la lista (no incluida
-arriba), `config.md` se genera igual, pero tendrás que pedir que se
-añada su motor de minado antes de poder arrancarla de verdad.
+Si eliges en el desplegable alguna otra moneda del catálogo (marcada
+🚧), `config.md` se genera igual, pero la app te avisará de que todavía
+no sabe arrancarla de verdad — pide que se añada su motor de minado
+cuando quieras usarla.
 
-### Opción B: a mano
+## Uso avanzado: sin el formulario
 
-1. Instala el motor de minado que necesite tu moneda (ver tabla arriba;
-   XMRig, kawpowminer o lolMiner) y colócalo en tu `PATH`, o copia el
-   ejecutable dentro de la carpeta `bin/` de este proyecto (ver
-   `bin/LEEME.md`).
-2. Copia `config.example.md` como `config.md` y rellena tu wallet y la
-   moneda (por ahora: `XMR`).
-3. Ejecuta:
+Si prefieres no abrir la ventana gráfica, puedes escribir `config.md` a
+mano (copia `config.example.md`, ahí se explica el formato) y ejecutar
+directamente:
 
-   ```
-   python3 src/minar.py
-   ```
+```
+python3 src/minar.py
+```
 
-   Para comprobar qué haría sin minar de verdad:
+o, para comprobar qué haría sin minar de verdad:
 
-   ```
-   python3 src/minar.py --dry-run
-   ```
+```
+python3 src/minar.py --dry-run
+```
+
+`minar.py` también instala solo el motor que falte, igual que el
+formulario.
 
 ## Documentación
 

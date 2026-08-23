@@ -94,3 +94,31 @@ def recomendar(cpu: InfoCPU | None, gpus: list[InfoGPU]) -> tuple[list[OpcionMon
 
     ordenados = clasificar_por_ingreso(simbolos_posibles, TODAS_LAS_MONEDAS)
     return construir_opciones(simbolos_posibles), ordenados[0]
+
+
+def recomendar_cpu(cpu: InfoCPU | None) -> tuple[list[OpcionMoneda], str | None]:
+    """
+    Como recomendar(), pero solo para el procesador. Devuelve las opciones
+    de CPU posibles (ordenadas de mayor a menor ingreso estimado) y el
+    símbolo recomendado (el primero del ranking), o ([], None) si no hay
+    CPU o ninguna opción.
+    """
+    simbolos = monedas_cpu_posibles(cpu)
+    if not simbolos:
+        return [], None
+    ordenados = clasificar_por_ingreso(simbolos, TODAS_LAS_MONEDAS)
+    return construir_opciones(ordenados), ordenados[0]
+
+
+def recomendar_gpu(gpus: list[InfoGPU]) -> tuple[list[OpcionMoneda], str | None]:
+    """
+    Como recomendar(), pero solo para la tarjeta gráfica. Devuelve las
+    opciones de GPU posibles (ordenadas de mayor a menor ingreso estimado)
+    y el símbolo recomendado, o ([], None) si no hay GPU detectada o
+    ninguna con VRAM suficiente.
+    """
+    simbolos = monedas_gpu_posibles(gpus)
+    if not simbolos:
+        return [], None
+    ordenados = clasificar_por_ingreso(simbolos, TODAS_LAS_MONEDAS)
+    return construir_opciones(ordenados), ordenados[0]

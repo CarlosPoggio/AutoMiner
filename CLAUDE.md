@@ -6,21 +6,32 @@ frase sencilla y regístralas en `docs/DECISIONS.md`.
 
 ## Qué es este proyecto
 
-Herramienta personal para iniciar el minado de criptomonedas (uso propio,
-con su propia wallet y su propio ordenador). Un fichero de texto
-(`config.md`) guarda la wallet y la moneda; el script `src/minar.py` lee
-ese fichero y arranca el motor de minado correcto con esos datos.
-`src/formulario.py` es una ventana muy sencilla (Tkinter) que analiza el
-hardware del ordenador, muestra qué monedas se pueden minar con él y
-genera `config.md` por ti.
+Herramienta personal para minar criptomonedas (uso propio, con su propia
+wallet y su propio ordenador), pensada para alguien que no sabe nada de
+técnica: `src/formulario.py` es una única ventana (Tkinter) que analiza
+el hardware, deja elegir moneda y wallet por separado para CPU y para
+GPU, y al pulsar "Comenzar a minar" hace todo el trabajo sola —
+instala el motor de minado que falte (descargándolo de su release
+oficial en GitHub, ver `src/instalador.py`) y arranca a minar,
+mostrando un registro en vivo traducido a lenguaje sencillo. Un fichero
+de texto (`config.md`, formato dual `cpu_moneda`/`cpu_wallet`/
+`gpu_moneda`/`gpu_wallet`, ambos bloques opcionales) guarda lo elegido;
+`src/minar.py` también se puede usar solo, sin el formulario, leyendo
+ese fichero.
 
 Módulos en `src/`: `hardware.py` (detecta CPU/GPU), `monedas.py`
 (catálogo de monedas de CPU y GPU, con su comisión y si están
-implementadas), `motores.py` (sabe encontrar y arrancar cada programa de
-minado: xmrig, kawpowminer, lolMiner), `ingresos.py` (ranking de
+implementadas), `motores.py` (sabe encontrar cada programa de minado —
+xmrig, kawpowminer, lolMiner — y construir su comando), `instalador.py`
+(si un motor no está instalado, lo descarga solo desde su release
+oficial de GitHub y lo deja listo en `bin/`), `ingresos.py` (ranking de
 ingresos, en vivo o de reserva), `recomendador.py` (junta hardware +
-catálogo + ingresos), `config_writer.py` (escribe `config.md`),
-`formulario.py` (la ventana), `minar.py` (arranca el minado de verdad).
+catálogo + ingresos; `recomendar_cpu`/`recomendar_gpu` separan las
+opciones de cada componente), `config_writer.py` (escribe `config.md`
+en formato dual), `formulario.py` (la ventana: configuración + arranque
++ logs, todo en una sola app), `minar.py` (parsea/valida `config.md`,
+sabe arrancar CPU y GPU a la vez como procesos concurrentes, e
+interpreta su salida en `interpretar_linea`).
 
 Monedas soportadas hoy por `minar.py` (ver tabla completa en README.md):
 XMR, WOW, ZEPH, SAL, RTM (CPU, motor xmrig) y RVN, KAS, ALPH (GPU,
@@ -38,17 +49,22 @@ formato de comando y comisión con fuentes fiables (ver
 ## Comandos
 
 - Ejecutar tests: `python3 -m unittest discover -s tests -v`
-- Abrir el formulario gráfico (rellena config.md por ti): `python3 src/formulario.py`
-  — necesita una pantalla; en Linux puede hacer falta instalar el paquete
-  del sistema `python3-tk` si no abre.
+- Abrir la app (analiza, deja elegir y arranca a minar de verdad):
+  `python3 src/formulario.py` — necesita una pantalla; en Linux puede
+  hacer falta instalar el paquete del sistema `python3-tk` si no abre.
+  **Ojo: a diferencia de antes, el botón "Comenzar a minar" sí conecta
+  con un pool real y mina de verdad** (e instala el motor que falte).
 - Comprobar el script de minado sin minar de verdad: `python3 src/minar.py --dry-run`
-- Ejecutar el minado de verdad (requiere XMRig instalado): `python3 src/minar.py`
+- Ejecutar el minado de verdad sin el formulario (con `config.md` ya
+  escrito a mano o generado antes): `python3 src/minar.py` — si falta
+  el motor de minado, lo descarga solo (ver `src/instalador.py`).
 
 No hay dependencias externas de Python (todo usa la librería estándar,
-incluyendo Tkinter y la consulta de ingresos por internet) para que
-Carlos no tenga que instalar nada complicado. Si en el futuro hace falta
-una librería de verdad, añádela a un `requirements.txt` y explica por qué
-en `docs/DECISIONS.md`.
+incluyendo Tkinter, la consulta de ingresos por internet y la descarga
+automática de motores con `urllib`) para que Carlos no tenga que
+instalar nada complicado. Si en el futuro hace falta una librería de
+verdad, añádela a un `requirements.txt` y explica por qué en
+`docs/DECISIONS.md`.
 
 Este entorno de sesión en la nube no tiene pantalla ni el paquete gráfico
 de Tkinter instalado, y no se puede instalar (la red está limitada). Por

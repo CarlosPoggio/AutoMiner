@@ -1,6 +1,7 @@
 import sys
 import tempfile
 import unittest
+import urllib.error
 from pathlib import Path
 from unittest.mock import patch
 
@@ -84,9 +85,12 @@ class TestRecomendador(unittest.TestCase):
 
 class TestIngresos(unittest.TestCase):
     def test_sin_conexion_devuelve_none(self):
-        # En este entorno de pruebas no hay salida a internet, así que esto
-        # comprueba de verdad el camino "sin conexión" -> no debe reventar.
-        resultado = ingresos.obtener_ingresos_en_vivo()
+        # Simulamos que no hay salida a internet (urlopen falla) y
+        # comprobamos que el camino "sin conexión" devuelve None sin reventar.
+        # Se mockea para que el test sea determinista y no dependa de si la
+        # máquina donde corre tiene o no conexión.
+        with patch("ingresos.urllib.request.urlopen", side_effect=urllib.error.URLError("sin red")):
+            resultado = ingresos.obtener_ingresos_en_vivo()
         self.assertIsNone(resultado)
 
     def test_clasificar_por_ingreso_usa_reserva_sin_conexion(self):
@@ -126,41 +130,93 @@ class TestIngresos(unittest.TestCase):
         self.assertNotIn("ZZZ", resultado)  # sin datos suficientes, se descarta
 
 
+class TestRecomendarPorComponente(unittest.TestCase):
+    def test_recomendar_cpu_da_opciones_cpu(self):
+        cpu = hardware.InfoCPU(modelo="CPU", nucleos_logicos=8)
+        with patch("recomendador.clasificar_por_ingreso", side_effect=lambda s, c: sorted(s)):
+            opciones, recomendado = recomendador.recomendar_cpu(cpu)
+        self.assertTrue(all(o.tipo == "cpu" for o in opciones))
+        self.assertIsNotNone(recomendado)
+
+    def test_recomendar_cpu_sin_cpu(self):
+        self.assertEqual(recomendador.recomendar_cpu(None), ([], None))
+
+    def test_recomendar_gpu_filtra_y_recomienda(self):
+        gpus = [hardware.InfoGPU(modelo="4GB", vram_gb=4.0, fabricante="NVIDIA")]
+        with patch("recomendador.clasificar_por_ingreso", side_effect=lambda s, c: sorted(s)):
+            opciones, recomendado = recomendador.recomendar_gpu(gpus)
+        simbolos = {o.simbolo for o in opciones}
+        self.assertIn("RVN", simbolos)
+        self.assertNotIn("ERG", simbolos)  # necesita 6 GB
+        self.assertIsNotNone(recomendado)
+
+    def test_recomendar_gpu_sin_gpu(self):
+        self.assertEqual(recomendador.recomendar_gpu([]), ([], None))
+
+
 class TestConfigWriter(unittest.TestCase):
-    def test_guardar_config_moneda_soportada(self):
+    def test_guardar_config_cpu_soportada(self):
         with tempfile.TemporaryDirectory() as d:
             ruta = Path(d) / "config.md"
-            config_writer.guardar_config(ruta, "mi-wallet-123", "XMR", "2026-08-20")
+            config_writer.guardar_config(ruta, "2026-08-20", {"simbolo": "XMR", "wallet": "mi-wallet-123"}, None)
             contenido = ruta.read_text(encoding="utf-8")
-        self.assertIn("wallet: mi-wallet-123", contenido)
-        self.assertIn("moneda: XMR", contenido)
+        self.assertIn("cpu_wallet: mi-wallet-123", contenido)
+        self.assertIn("cpu_moneda: XMR", contenido)
         self.assertNotIn("Aviso", contenido)
+        self.assertNotIn("gpu_", contenido)
 
     def test_guardar_config_moneda_no_soportada_incluye_aviso(self):
         with tempfile.TemporaryDirectory() as d:
             ruta = Path(d) / "config.md"
-            config_writer.guardar_config(ruta, "mi-wallet-123", "ERG", "2026-08-20")
+            config_writer.guardar_config(ruta, "2026-08-20", None, {"simbolo": "ERG", "wallet": "mi-wallet-123"})
             contenido = ruta.read_text(encoding="utf-8")
-        self.assertIn("moneda: ERG", contenido)
+        self.assertIn("gpu_moneda: ERG", contenido)
         self.assertIn("Aviso", contenido)
 
-    def test_guardar_config_moneda_gpu_soportada_incluye_aviso_sin_confirmar(self):
+    def test_guardar_config_gpu_soportada_incluye_aviso_sin_confirmar(self):
         with tempfile.TemporaryDirectory() as d:
             ruta = Path(d) / "config.md"
-            config_writer.guardar_config(ruta, "mi-wallet-123", "RVN", "2026-08-20")
+            config_writer.guardar_config(ruta, "2026-08-20", None, {"simbolo": "RVN", "wallet": "mi-wallet-123"})
             contenido = ruta.read_text(encoding="utf-8")
-        self.assertIn("moneda: RVN", contenido)
+        self.assertIn("gpu_moneda: RVN", contenido)
         self.assertIn("nunca contra una tarjeta gráfica real", contenido)
 
-    def test_config_generado_es_compatible_con_minar_parsear(self):
+    def test_guardar_config_ambos_bloques(self):
+        with tempfile.TemporaryDirectory() as d:
+            ruta = Path(d) / "config.md"
+            config_writer.guardar_config(
+                ruta, "2026-08-20",
+                {"simbolo": "XMR", "wallet": "wallet-cpu"},
+                {"simbolo": "RVN", "wallet": "wallet-gpu"},
+            )
+            contenido = ruta.read_text(encoding="utf-8")
+        self.assertIn("cpu_moneda: XMR", contenido)
+        self.assertIn("cpu_wallet: wallet-cpu", contenido)
+        self.assertIn("gpu_moneda: RVN", contenido)
+        self.assertIn("gpu_wallet: wallet-gpu", contenido)
+
+    def test_guardar_config_ambos_none_lanza_valueerror(self):
+        with tempfile.TemporaryDirectory() as d:
+            ruta = Path(d) / "config.md"
+            with self.assertRaises(ValueError):
+                config_writer.guardar_config(ruta, "2026-08-20", None, None)
+
+    def test_config_generado_es_compatible_con_minar(self):
         import minar
 
         with tempfile.TemporaryDirectory() as d:
             ruta = Path(d) / "config.md"
-            config_writer.guardar_config(ruta, "4walletdeejemplo", "XMR", "2026-08-20")
+            config_writer.guardar_config(
+                ruta, "2026-08-20",
+                {"simbolo": "XMR", "wallet": "4walletdeejemplo"},
+                {"simbolo": "RVN", "wallet": "RwalletdeejemploGPU"},
+            )
             datos = minar.parsear_config(ruta)
-        self.assertEqual(datos["wallet"], "4walletdeejemplo")
-        self.assertEqual(datos["moneda"], "XMR")
+            bloques = minar.validar(datos)
+        self.assertIn("cpu", bloques)
+        self.assertIn("gpu", bloques)
+        self.assertEqual(bloques["cpu"][0], "4walletdeejemplo")
+        self.assertEqual(bloques["cpu"][1], "XMR")
 
 
 if __name__ == "__main__":

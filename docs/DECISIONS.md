@@ -217,3 +217,49 @@ XMRig es un programa grande y distinto para cada sistema operativo
 (Windows, Mac, Linux). En vez de guardarlo dentro del repositorio, el
 script lo busca en tu ordenador o en una carpeta `bin/` local que tú
 rellenas tú mismo siguiendo las instrucciones de `bin/LEEME.md`.
+
+## 2026-08-23 — Formulario y minado, una sola app; el motor de minado se instala solo
+
+Dijiste, con razón, que pedirte instalar tú el motor de minado a mano ya
+era pedirte demasiado: la premisa de este proyecto es que no tienes que
+saber hacer nada técnico. Cuatro cambios grandes de esta sesión, todos
+con la misma idea detrás:
+
+1. **Una sola ventana hace todo.** Antes `formulario.py` solo escribía
+   `config.md` y había que abrir una terminal aparte y ejecutar
+   `minar.py` para minar de verdad — dos pasos, uno de ellos por
+   terminal. Ahora el botón "Comenzar a minar" del propio formulario
+   hace las dos cosas: guarda la configuración y arranca a minar en el
+   momento, sin salir de la ventana.
+2. **El motor de minado se descarga solo.** Nuevo módulo
+   `src/instalador.py`: si al pulsar "Comenzar a minar" falta el
+   programa de minado (XMRig, kawpowminer o lolMiner), la app consulta
+   la página oficial de ese proyecto en GitHub, descarga la versión
+   correcta para tu sistema operativo (y, para kawpowminer, según si tu
+   tarjeta gráfica es NVIDIA o de otra marca) y la deja lista en `bin/`
+   — sin que tengas que buscar ni descargar nada tú. `bin/LEEME.md`
+   queda como explicación de qué es esa carpeta y como opción manual de
+   repuesto, no como paso obligatorio.
+3. **CPU y GPU, cada una con su propia moneda y wallet.** Antes solo se
+   podía elegir una moneda y una wallet para todo el ordenador. Ahora
+   `config.md` tiene dos bloques independientes (`cpu_moneda`/
+   `cpu_wallet` y `gpu_moneda`/`gpu_wallet`, cada uno opcional) y puedes
+   minar solo con el procesador, solo con la tarjeta gráfica, o con las
+   dos a la vez — cada una mandando sus ingresos a la wallet que tú
+   quieras.
+4. **El registro de minado se traduce a lenguaje sencillo.** Los
+   programas de minado (XMRig, etc.) escriben su registro técnico en
+   inglés y con mucho detalle. Ahora `minar.py` interpreta ese registro
+   y muestra frases simples ("conectado al pool", "comparte aceptado",
+   "velocidad: ..."); si quieres ver el registro técnico completo, hay
+   una casilla para activarlo.
+
+Una decisión más pequeña dentro de este cambio: la descarga automática
+del motor de minado no comprueba una "firma" o "huella digital" de
+seguridad del archivo (algo que sí ofrecen XMRig y kawpowminer, pero no
+lolMiner, así que no había forma de hacerlo igual para los tres). Se
+descarga siempre en conexión cifrada (https) directamente desde el
+repositorio oficial del proyecto en GitHub, que es la misma fuente que
+usaría cualquier persona si lo descargara a mano. Si en el futuro
+quieres ese nivel extra de comprobación, se puede añadir para XMRig y
+kawpowminer.
