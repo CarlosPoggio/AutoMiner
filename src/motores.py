@@ -22,7 +22,14 @@ def _buscar_binario(nombres: list[str], raiz_proyecto: Path) -> str | None:
             return en_path
     for nombre in nombres:
         candidato = raiz_proyecto / "bin" / nombre
-        if candidato.exists():
+        # OJO: tiene que ser un FICHERO, no basta con "existe". instalador.py
+        # extrae cada motor descargado en una carpeta bin/<nombre_motor>/
+        # (por ejemplo bin/xmrig/) que se llama igual que uno de los nombres
+        # candidatos sin extensión ("xmrig") — sin este chequeo, esa carpeta
+        # "gana" antes de llegar a comprobar "xmrig.exe", y subprocess.Popen
+        # falla con PermissionError/WinError 5 al intentar "ejecutar" una
+        # carpeta.
+        if candidato.is_file():
             return str(candidato)
     return None
 

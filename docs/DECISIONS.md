@@ -417,3 +417,35 @@ Dos cambios:
    Exclusiones → Agregar una exclusión → Carpeta. También puedes revisar
    "Historial de protección" ahí mismo para ver si detectó y bloqueó
    algo en concreto.
+
+**Corrección (2026-08-23, más tarde el mismo día):** la explicación de
+arriba resultó estar equivocada — añadiste la excepción y el error
+seguía pasando, igual que antes. Investigué directamente en tu
+ordenador (misma sesión de Claude Code, mismo equipo) en vez de seguir
+suponiendo, y encontré la causa real, que no tiene nada que ver con el
+antivirus:
+
+`src/instalador.py`, al descargar xmrig, lo descomprime en una carpeta
+`bin/xmrig/` (además de dejar también una copia suelta en
+`bin/xmrig.exe`, que es la que de verdad se usa para minar). El
+problema es que `src/motores.py` busca el ejecutable probando una lista
+de nombres candidatos (`"xmrig"`, luego `"xmrig.exe"`) y se quedaba con
+el primero que "existiera" en esa carpeta — pero **no comprobaba que
+fuera un fichero y no una carpeta**. Como esa carpeta de extracción se
+llama exactamente `xmrig` (el primer nombre candidato, sin extensión),
+el código encontraba la CARPETA antes de llegar a comprobar
+`xmrig.exe`, y le pasaba esa ruta a `subprocess.Popen` como si fuera el
+programa a ejecutar. Windows no puede "ejecutar" una carpeta, y reporta
+justo ese caso como "Acceso denegado" (WinError 5) — de ahí el mensaje
+engañoso, que apuntaba al antivirus sin serlo.
+
+Arreglado en `src/motores.py` (`_buscar_binario`): ahora comprueba
+`candidato.is_file()` en vez de `candidato.exists()`, así que una
+carpeta con el mismo nombre nunca se puede confundir con el ejecutable.
+Nuevo test de regresión en `tests/test_motores.py` que reproduce
+exactamente este caso (una carpeta `bin/xmrig/` junto a un
+`bin/xmrig.exe` real) para que no se repita. La lección para la próxima
+vez que aparezca un error así: si el mismo problema persiste después de
+aplicar el arreglo "más probable" a la primera, hay que parar de
+suponer y comprobar directamente qué está pasando en la máquina real
+antes de dar otra explicación.

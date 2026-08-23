@@ -1,5 +1,21 @@
 # Historial de sesiones
 
+## 2026-08-23 (5) — La causa real del "Acceso denegado" no era el antivirus: bug en la búsqueda del ejecutable
+
+- El "Acceso denegado" seguía pasando después de excluir la carpeta del
+  antivirus. Investigado directamente en el ordenador de Carlos:
+  `src/motores.py` (`_buscar_binario`) encontraba la carpeta
+  `bin/xmrig/` (creada por `src/instalador.py` al descomprimir la
+  descarga) en vez del ejecutable real `bin/xmrig.exe`, porque solo
+  comprobaba que el candidato "existiera" y no que fuera un fichero.
+  Windows no puede ejecutar una carpeta y lo reporta como "Acceso
+  denegado", de ahí el mensaje engañoso.
+- Arreglado: `_buscar_binario` ahora exige `candidato.is_file()`. Nuevo
+  test de regresión en `tests/test_motores.py`. 113 tests en verde.
+- `docs/DECISIONS.md` actualizado con la corrección (la explicación
+  anterior, "es el antivirus", quedaba incompleta/incorrecta como causa
+  única — documentado explícitamente en vez de borrarlo).
+
 ## 2026-08-23 (4) — Sesión local confirmada, y arreglo del "Acceso denegado" al arrancar el motor
 
 - Confirmado que el trabajo en este proyecto ya no ocurre en la sesión
