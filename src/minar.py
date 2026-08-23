@@ -313,6 +313,53 @@ def interpretar_linea(linea_cruda: str) -> str | None:
     return None
 
 
+# Multiplicador a Hz de cada sufijo de unidad, según el motor. Verificado
+# contra el formato real de cada uno (no adivinado):
+# - xmrig: código fuente/ejemplos oficiales, siempre en H/s.
+# - kawpowminer: código fuente real (TelemetryType::str en libethcore/Miner.h
+#   del repo RavenCommunity/kawpowminer), sufijos "h"/"Kh"/"Mh"/"Gh".
+# - lolMiner: closed-source, formato "Total: X mh/s" confirmado por varios
+#   registros reales compartidos por usuarios (no hay código fuente público).
+_UNIDADES_HZ = {"h": 1.0, "kh": 1e3, "mh": 1e6, "gh": 1e9}
+
+_RE_XMRIG = re.compile(r"speed\s+10s/60s/15m\s+([\d.]+|n/a)")
+_RE_KAWPOWMINER = re.compile(r"A[\d:WRF]*\s*(?:\x1b\[[0-9;]*m)*\s*([\d.]+)\s*(?:\x1b\[[0-9;]*m)*\s*(h|Kh|Mh|Gh)\s*-")
+_RE_LOLMINER = re.compile(r"Total:?\s*([\d.]+)\s*(kh|mh|gh|h)/s", re.IGNORECASE)
+
+
+def extraer_hashrate_real(linea_cruda: str, nombre_motor: str) -> tuple[float, str] | None:
+    """
+    Busca en una línea cruda del motor la velocidad de minado ACTUAL (no la
+    de referencia), y la devuelve en hercios (hashes/segundo) junto con un
+    texto legible ("12.34 Mh/s"). Devuelve None si esta línea concreta no
+    trae ese dato (la mayoría no lo traen; solo las de resumen periódico).
+    """
+    if nombre_motor == "xmrig":
+        m = _RE_XMRIG.search(linea_cruda)
+        if not m or m.group(1) == "n/a":
+            return None
+        hz = float(m.group(1))
+        return hz, f"{m.group(1)} H/s"
+
+    if nombre_motor == "kawpowminer":
+        m = _RE_KAWPOWMINER.search(linea_cruda)
+        if not m:
+            return None
+        valor, sufijo = m.group(1), m.group(2).lower()
+        hz = float(valor) * _UNIDADES_HZ[sufijo]
+        return hz, f"{valor} {m.group(2)}/s"
+
+    if nombre_motor == "lolminer":
+        m = _RE_LOLMINER.search(linea_cruda)
+        if not m:
+            return None
+        valor, sufijo = m.group(1), m.group(2).lower()
+        hz = float(valor) * _UNIDADES_HZ[sufijo]
+        return hz, f"{valor} {sufijo}/s"
+
+    return None
+
+
 def _preparar_bin(bloque: str, moneda: str, raiz_proyecto: Path, dry_run: bool, on_linea) -> str | None:
     """Localiza (o descarga) el ejecutable del motor de este bloque.
     Devuelve la ruta, o None si no se pudo preparar (ya avisado)."""

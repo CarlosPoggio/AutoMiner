@@ -493,3 +493,46 @@ rellena campos vacíos. Nuevo test de regresión en
 Tkinter real, ya que esto es exactamente el tipo de fallo que una
 función aislada sin ventana no puede detectar) y comprueba que marcar
 la casilla rellena el campo.
+
+## 2026-08-23 (8) — Ingreso estimado con tu hashrate REAL, en la pantalla de minado
+
+Preguntaste, con razón: si el motor de minado ya está reportando tu
+velocidad real, ¿por qué seguir mostrando solo la estimación de
+referencia (1 kH/s, etc.)? Confirmado: la estimación de antes de
+arrancar es siempre a esa velocidad fija, nunca la tuya. Ahora, en la
+pantalla "Minado en marcha", arriba del todo, aparece una segunda
+estimación que se actualiza sola con tu velocidad real, en cuanto el
+motor la reporta por primera vez.
+
+Cómo se hizo, con cuidado de no inventar ningún formato:
+- **xmrig**: confirmé el formato exacto de su línea de velocidad
+  (`speed 10s/60s/15m X Y Z H/s max W H/s`) con ejemplos reales de
+  usuarios en el propio repositorio de GitHub del proyecto (issues
+  #872 y #2624), no adivinado.
+- **kawpowminer**: es de código abierto, así que fui a la fuente
+  directamente: la función que construye esa línea
+  (`TelemetryType::str()` en `libethcore/Miner.h` del repositorio
+  oficial `RavenCommunity/kawpowminer`) — formato 100% verificado, no
+  una suposición sobre cómo "debería" verse.
+- **lolMiner**: es de código cerrado, así que no hay fuente que
+  consultar; usé el formato ("Total: X mh/s") que aparece igual en
+  varios registros reales compartidos por distintos usuarios en GitHub,
+  con confianza razonable pero no absoluta (si alguna vez no coincide,
+  simplemente no se actualiza esa cifra — nunca se rompe la app ni se
+  inventa un número).
+- Nuevo `minar.extraer_hashrate_real(linea, motor)`: intenta sacar la
+  velocidad real de una línea de log concreta; si esa línea no la trae
+  (la mayoría no), devuelve `None` sin más.
+- Nuevo `estimacion_ingreso.escalar_a_hashrate(...)`: reescala la
+  estimación de referencia (ya calculada con datos reales de red y
+  precio) a la velocidad real medida. Es solo una multiplicación local
+  — no hace ninguna consulta de red nueva por cada línea de log, así
+  que no hay riesgo de saturar las APIs aunque el motor reporte la
+  velocidad muy seguido.
+- Como antes, si la moneda no tiene fuente de datos verificada (WOW,
+  RTM, ALPH), se muestra "estimación no disponible" en vez de un número
+  inventado — igual de honesto que la estimación de referencia.
+- Probado de extremo a extremo simulando una línea real de xmrig contra
+  una `App` de Tkinter de verdad (no solo con funciones aisladas), para
+  no repetir el tipo de fallo de la entrada anterior. 127 tests en
+  verde.

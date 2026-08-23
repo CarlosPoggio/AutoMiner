@@ -121,6 +121,29 @@ class TestTextoEstimacion(unittest.TestCase):
 
 
 @unittest.skipUnless(TIENE_FORMULARIO, "tkinter no disponible en este entorno")
+class TestTextoIngresoReal(unittest.TestCase):
+    def test_moneda_no_disponible(self):
+        texto = formulario.texto_ingreso_real("WOW", disponible=False)
+        self.assertIn("WOW", texto)
+        self.assertIn("no disponible", texto)
+
+    def test_disponible_pero_sin_lectura_aun(self):
+        texto = formulario.texto_ingreso_real("XMR", disponible=True)
+        self.assertIn("XMR", texto)
+        self.assertIn("calculando", texto.lower())
+
+    def test_con_hashrate_real_incluye_todo(self):
+        texto = formulario.texto_ingreso_real(
+            "XMR", disponible=True, hashrate_texto="4500.0 H/s",
+            moneda_por_hora=0.05, usd_por_hora=21.5,
+        )
+        self.assertIn("XMR", texto)
+        self.assertIn("4500.0 H/s", texto)
+        self.assertIn("XMR/hora", texto)
+        self.assertIn("$/hora", texto)
+
+
+@unittest.skipUnless(TIENE_FORMULARIO, "tkinter no disponible en este entorno")
 class TestAutorrellenoWalletAlMarcarCasilla(unittest.TestCase):
     """
     Regresión: al abrir la app, el campo de wallet empieza deshabilitado

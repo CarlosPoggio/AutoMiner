@@ -1,5 +1,25 @@
 # Historial de sesiones
 
+## 2026-08-23 (8) — Ingreso estimado con hashrate real en la pantalla de minado
+
+- Nuevo `minar.extraer_hashrate_real(linea, motor)`: saca la velocidad
+  real de minado de una línea de log concreta (formato de xmrig
+  verificado con ejemplos reales de GitHub; kawpowminer verificado
+  contra su código fuente real, `TelemetryType::str()` en
+  `libethcore/Miner.h`; lolMiner por varios registros reales
+  coincidentes, es de código cerrado). Devuelve `None` si esa línea no
+  trae el dato (la mayoría no).
+- Nuevo `estimacion_ingreso.escalar_a_hashrate(...)`: reescala la
+  estimación de referencia ya calculada a la velocidad real medida,
+  sin ninguna consulta de red adicional (aritmética local).
+- `src/formulario.py`: nueva etiqueta fija arriba de "Minado en
+  marcha" por bloque activo, que pasa de "calculando tu velocidad
+  real…" a la cifra real en cuanto llega la primera lectura del motor.
+  Sigue mostrando "no disponible" para WOW/RTM/ALPH, igual que antes.
+- Probado de extremo a extremo con una `App` de Tkinter real. 127 tests
+  en verde (antes 124).
+- `docs/DECISIONS.md` actualizado con el detalle y las fuentes exactas.
+
 ## 2026-08-23 (7) — El autorrelleno de wallet seguía fallando: el campo empieza deshabilitado
 
 - Causa real (la del parser de la entrada anterior no era la única): el

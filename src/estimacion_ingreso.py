@@ -290,3 +290,16 @@ def estimar_referencia(simbolo: str) -> "EstimacionReferencia | None":
         usd_por_hora=moneda_por_hora * precio,
         fuente=fuente,
     )
+
+
+def escalar_a_hashrate(estimacion: "EstimacionReferencia", hashrate_real_hz: float) -> tuple[float, float]:
+    """
+    Reescala una EstimacionReferencia (calculada para la velocidad fija de
+    REFERENCIA_HASHRATE) a un hashrate real medido, en hercios. No hace
+    ninguna consulta de red: la proporción es aritmética local, así que se
+    puede llamar en cada línea de log nueva sin golpear ninguna API.
+    Devuelve (moneda_por_hora, usd_por_hora) para ese hashrate real.
+    """
+    ref_hz, _ = REFERENCIA_HASHRATE[estimacion.simbolo]
+    factor = hashrate_real_hz / ref_hz
+    return estimacion.moneda_por_hora * factor, estimacion.usd_por_hora * factor

@@ -171,6 +171,49 @@ class TestInterpretarLinea(unittest.TestCase):
         self.assertIsNone(minar.interpretar_linea("* THREADS       8"))
 
 
+class TestExtraerHashrateReal(unittest.TestCase):
+    def test_xmrig_linea_real(self):
+        # Formato real de xmrig (ver github.com/xmrig/xmrig, issues #872/#2624).
+        linea = "[2019-12-07 03:46:07.280] speed 10s/60s/15m 7235.8 7465.3 7609.8 H/s max 9244.0 H/s"
+        resultado = minar.extraer_hashrate_real(linea, "xmrig")
+        self.assertIsNotNone(resultado)
+        hz, texto = resultado
+        self.assertAlmostEqual(hz, 7235.8)
+        self.assertIn("H/s", texto)
+
+    def test_xmrig_sin_datos_aun_da_none(self):
+        linea = "speed 10s/60s/15m n/a n/a n/a H/s max n/a H/s"
+        self.assertIsNone(minar.extraer_hashrate_real(linea, "xmrig"))
+
+    def test_kawpowminer_linea_real(self):
+        # Formato real: TelemetryType::str() en libethcore/Miner.h del repo
+        # oficial RavenCommunity/kawpowminer (verificado en el código fuente).
+        linea = "0:02 A3 12.34 Mh - cu0 12.34"
+        resultado = minar.extraer_hashrate_real(linea, "kawpowminer")
+        self.assertIsNotNone(resultado)
+        hz, texto = resultado
+        self.assertAlmostEqual(hz, 12.34 * 1e6)
+        self.assertIn("Mh/s", texto)
+
+    def test_kawpowminer_unidad_gh(self):
+        linea = "1:15 A100 1.50 Gh - cu0 1.50"
+        hz, _ = minar.extraer_hashrate_real(linea, "kawpowminer")
+        self.assertAlmostEqual(hz, 1.50 * 1e9)
+
+    def test_lolminer_linea_real(self):
+        linea = "Average speed (30s): 34.27mh/s | 9.10mh/s Total: 43.37 mh/s"
+        resultado = minar.extraer_hashrate_real(linea, "lolminer")
+        self.assertIsNotNone(resultado)
+        hz, texto = resultado
+        self.assertAlmostEqual(hz, 43.37 * 1e6)
+
+    def test_linea_sin_hashrate_da_none(self):
+        self.assertIsNone(minar.extraer_hashrate_real("net accepted (1/0)", "xmrig"))
+
+    def test_motor_desconocido_da_none(self):
+        self.assertIsNone(minar.extraer_hashrate_real("Total: 10.0 mh/s", "motor-raro"))
+
+
 class TestIniciarMinado(unittest.TestCase):
     def test_dry_run_no_arranca_proceso(self):
         info = minar.MONEDAS_SOPORTADAS["XMR"]

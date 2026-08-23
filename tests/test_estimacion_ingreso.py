@@ -224,5 +224,25 @@ class TestCachePrecios(BaseEstimacion):
         self.assertEqual(llamadas["coingecko"], 1)
 
 
+class TestEscalarAHashrate(unittest.TestCase):
+    def test_escala_proporcionalmente_sin_red(self):
+        base = est.EstimacionReferencia(
+            simbolo="XMR", hashrate_referencia="1 kH/s",
+            moneda_por_hora=0.01, usd_por_hora=4.3, fuente="test",
+        )
+        # El doble de la referencia (1000 H/s) -> el doble de ingreso.
+        moneda_h, usd_h = est.escalar_a_hashrate(base, 2000.0)
+        self.assertAlmostEqual(moneda_h, 0.02)
+        self.assertAlmostEqual(usd_h, 8.6)
+
+    def test_no_hace_ninguna_peticion_de_red(self):
+        base = est.EstimacionReferencia(
+            simbolo="RVN", hashrate_referencia="10 MH/s",
+            moneda_por_hora=1.0, usd_por_hora=0.5, fuente="test",
+        )
+        with patch("urllib.request.urlopen", side_effect=AssertionError("no debería llamar a la red")):
+            est.escalar_a_hashrate(base, 5e6)  # no lanza AssertionError
+
+
 if __name__ == "__main__":
     unittest.main()

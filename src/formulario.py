@@ -106,6 +106,27 @@ def texto_estimacion(est: "EstimacionReferencia | None") -> str:
     )
 
 
+def texto_ingreso_real(
+    simbolo: str, disponible: bool, hashrate_texto: "str | None" = None,
+    moneda_por_hora: "float | None" = None, usd_por_hora: "float | None" = None,
+) -> str:
+    """
+    Construye el texto del ingreso estimado con el hashrate REAL medido
+    durante el minado (a diferencia de texto_estimacion, que es siempre a
+    una velocidad de referencia fija). `disponible=False` significa que
+    esta moneda no tiene fuente de datos verificada (igual que
+    estimacion_ingreso.estimar_referencia devolviendo None). Mientras
+    `hashrate_texto` sea None (todavía no ha llegado ninguna lectura del
+    motor), se muestra "calculando"."""
+    if not disponible:
+        return f"{simbolo}: estimación no disponible para esta moneda"
+    if hashrate_texto is None:
+        return f"{simbolo}: calculando tu velocidad real…"
+    moneda = _formato_moneda(moneda_por_hora)
+    usd = _formato_usd(usd_por_hora)
+    return f"{simbolo} a tu velocidad real ({hashrate_texto}): ≈ {moneda} {simbolo}/hora   ≈ {usd}/hora"
+
+
 def boton_habilitado(cpu_activa: bool, cpu_wallet: str, gpu_activa: bool, gpu_wallet: str) -> bool:
     """El botón de comenzar se activa si al menos un bloque está marcado y
     tiene una wallet no vacía."""
@@ -482,10 +503,10 @@ class App(tk.Tk):
         ruta_config = RAIZ_PROYECTO / "config.md"
         guardar_config(ruta_config, date.today().isoformat(), cpu, gpu)
 
-        self._construir_logs()
+        self._construir_logs(cpu, gpu)
         self._lanzar_minado(cpu, gpu)
 
-    def _construir_logs(self):
+    def _construir_logs(self, cpu, gpu):
         # Dejamos de sondear estimaciones: la pantalla de configuración (con
         # sus etiquetas) va a desaparecer.
         self._est_activo = False
@@ -493,11 +514,33 @@ class App(tk.Tk):
             self.frame_config.destroy()
             self.frame_config = None
 
+        # Info del bloque activo (símbolo, motor, estimación base) para
+        # poder reescalar al hashrate real según van llegando líneas de
+        # log. Se rellena desde _lanzar_minado vía la cola.
+        self.info_bloque_activo: dict = {}
+        self.lbl_real_cpu = None
+        self.lbl_real_gpu = None
+
         self.frame_logs = ttk.Frame(self, padding=16)
         self.frame_logs.pack(fill="both", expand=True)
         marco = self.frame_logs
 
         ttk.Label(marco, text="Minado en marcha", font=("", 12, "bold")).pack(anchor="w")
+
+        # Ingreso estimado con el hashrate REAL (fijado arriba, se actualiza
+        # solo según llegan lecturas del motor de minado).
+        if cpu is not None:
+            self.lbl_real_cpu = ttk.Label(
+                marco, text=texto_ingreso_real(cpu["simbolo"], True),
+                foreground="#0a7a3f", wraplength=620, justify="left",
+            )
+            self.lbl_real_cpu.pack(anchor="w", pady=(4, 0))
+        if gpu is not None:
+            self.lbl_real_gpu = ttk.Label(
+                marco, text=texto_ingreso_real(gpu["simbolo"], True),
+                foreground="#0a7a3f", wraplength=620, justify="left",
+            )
+            self.lbl_real_gpu.pack(anchor="w", pady=(2, 6))
 
         self.ver_completo = tk.BooleanVar(value=False)
         ttk.Checkbutton(
@@ -541,6 +584,15 @@ class App(tk.Tk):
                     continue
                 info = MONEDAS_SOPORTADAS[simbolo]
                 nombre_motor = info["motor"]
+
+                # Base para reescalar al hashrate real más adelante (puede
+                # ser None si esta moneda no tiene fuente de datos
+                # verificada — ver estimacion_ingreso.py). Una sola consulta
+                # de red por bloque, al arrancar; el reescalado según llegan
+                # líneas de log es aritmética local, sin más peticiones.
+                estimacion_base = estimacion_ingreso.estimar_referencia(simbolo)
+                self.cola.put(("info_bloque", bloque, (simbolo, nombre_motor, estimacion_base)))
+
                 try:
                     bin_path = instalador.asegurar_motor(
                         nombre_motor, RAIZ_PROYECTO, fabricante_gpu=fab,
@@ -589,6 +641,13 @@ class App(tk.Tk):
                     self.sesiones.append(a)
                 elif tipo == "progreso":
                     self._anexar(f"[{a.upper()}] {b}")
+                elif tipo == "info_bloque":
+                    bloque = a
+                    simbolo, nombre_motor, estimacion_base = b
+                    self.info_bloque_activo[bloque] = {
+                        "simbolo": simbolo, "motor": nombre_motor, "base": estimacion_base,
+                    }
+                    self._actualizar_lbl_real(bloque, texto_ingreso_real(simbolo, estimacion_base is not None))
                 elif tipo == "linea":
                     bloque, cruda = a, b
                     interpretada = minar.interpretar_linea(cruda)
@@ -597,9 +656,28 @@ class App(tk.Tk):
                         self._anexar(f"[{bloque.upper()}] {cruda}")
                     elif interpretada is not None:
                         self._anexar(f"[{bloque.upper()}] {interpretada}")
+                    self._procesar_hashrate_real(bloque, cruda)
         except queue.Empty:
             pass
         self.after(200, self._procesar_cola)
+
+    def _procesar_hashrate_real(self, bloque: str, linea_cruda: str) -> None:
+        info = self.info_bloque_activo.get(bloque)
+        if info is None or info["base"] is None:
+            return
+        resultado = minar.extraer_hashrate_real(linea_cruda, info["motor"])
+        if resultado is None:
+            return
+        hz, texto_hr = resultado
+        moneda_h, usd_h = estimacion_ingreso.escalar_a_hashrate(info["base"], hz)
+        self._actualizar_lbl_real(
+            bloque, texto_ingreso_real(info["simbolo"], True, texto_hr, moneda_h, usd_h)
+        )
+
+    def _actualizar_lbl_real(self, bloque: str, texto: str) -> None:
+        lbl = self.lbl_real_cpu if bloque == "cpu" else self.lbl_real_gpu
+        if lbl is not None:
+            lbl.configure(text=texto)
 
     def _anexar(self, texto: str):
         self.txt_log.configure(state="normal")
