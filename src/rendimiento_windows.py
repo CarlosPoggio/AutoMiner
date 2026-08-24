@@ -89,6 +89,12 @@ def _declarar_funciones(advapi32):
     ]
     advapi32.LsaAddAccountRights.restype = ctypes.c_long
 
+    advapi32.LsaRemoveAccountRights.argtypes = [
+        wintypes.HANDLE, wintypes.LPVOID, wintypes.BOOLEAN,
+        ctypes.POINTER(_LsaUnicodeString), wintypes.ULONG,
+    ]
+    advapi32.LsaRemoveAccountRights.restype = ctypes.c_long
+
     advapi32.LsaClose.argtypes = [wintypes.HANDLE]
     advapi32.LsaClose.restype = ctypes.c_long
 
@@ -173,5 +179,61 @@ def conceder_privilegio_huge_pages(nombre_usuario: "str | None" = None) -> "tupl
             f"Permiso de rendimiento concedido a '{nombre_usuario}'. Hace falta cerrar "
             "sesión en Windows (o reiniciar) una vez para que xmrig empiece a usarlo."
         )
+    finally:
+        advapi32.LsaClose(handle_politica)
+
+
+def revocar_privilegio_huge_pages(nombre_usuario: "str | None" = None) -> "tuple[bool, str]":
+    """
+    Quita el permiso "Lock pages in memory" (SeLockMemoryPrivilege) al
+    usuario indicado (por defecto, el que está ejecutando este proceso) —
+    lo contrario de conceder_privilegio_huge_pages(), para dejar el
+    ordenador tal y como estaba antes de minar (ver src/limpieza.py).
+    Necesita permisos de administrador. Es seguro llamarlo aunque el
+    permiso no estuviera concedido (Windows no da error, LsaRemoveAccountRights
+    documenta que no falla si no había nada que quitar). Devuelve (ok,
+    mensaje) — el mensaje es para mostrar al usuario, tanto si sale bien
+    como si sale mal.
+    """
+    if os.name != "nt":
+        return False, "Esta optimización solo aplica en Windows."
+    if nombre_usuario is None:
+        nombre_usuario = os.environ.get("USERNAME", "")
+    if not nombre_usuario:
+        return False, "No se pudo determinar el usuario actual de Windows."
+
+    advapi32 = ctypes.WinDLL("advapi32", use_last_error=True)
+    _declarar_funciones(advapi32)
+
+    sid_buffer, error = _resolver_sid(advapi32, nombre_usuario)
+    if error:
+        return False, error
+
+    atributos = _LsaObjectAttributes()
+    ctypes.memset(ctypes.byref(atributos), 0, ctypes.sizeof(atributos))
+    atributos.Length = ctypes.sizeof(atributos)
+
+    handle_politica = wintypes.HANDLE()
+    estado = advapi32.LsaOpenPolicy(
+        None, ctypes.byref(atributos),
+        _POLICY_CREATE_ACCOUNT | _POLICY_LOOKUP_NAMES,
+        ctypes.byref(handle_politica),
+    )
+    if estado != 0:
+        codigo = advapi32.LsaNtStatusToWinError(estado)
+        return False, (
+            f"No se pudo abrir la política de seguridad de Windows (código {codigo}). "
+            "¿Se está ejecutando como administrador?"
+        )
+
+    try:
+        privilegio, _buffer_privilegio = _preparar_lsa_string(PRIVILEGIO_HUGE_PAGES)
+        estado = advapi32.LsaRemoveAccountRights(
+            handle_politica, sid_buffer, False, ctypes.byref(privilegio), 1,
+        )
+        if estado != 0:
+            codigo = advapi32.LsaNtStatusToWinError(estado)
+            return False, f"No se pudo quitar el permiso de rendimiento (código {codigo})."
+        return True, f"Permiso de rendimiento quitado a '{nombre_usuario}'."
     finally:
         advapi32.LsaClose(handle_politica)

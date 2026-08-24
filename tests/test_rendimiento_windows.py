@@ -46,7 +46,7 @@ class TestFlujoConWinapiSimulada(unittest.TestCase):
     seguridad de verdad.
     """
 
-    def _advapi32_falso(self, estado_open_policy=0, estado_add_rights=0):
+    def _advapi32_falso(self, estado_open_policy=0, estado_add_rights=0, estado_remove_rights=0):
         falso = MagicMock()
 
         def lookup_account(*args, **kwargs):
@@ -63,6 +63,7 @@ class TestFlujoConWinapiSimulada(unittest.TestCase):
         falso.LookupAccountNameW.side_effect = lookup_account
         falso.LsaOpenPolicy.return_value = estado_open_policy
         falso.LsaAddAccountRights.return_value = estado_add_rights
+        falso.LsaRemoveAccountRights.return_value = estado_remove_rights
         falso.LsaClose.return_value = 0
         falso.LsaNtStatusToWinError.side_effect = lambda estado: 5  # ACCESS_DENIED-like
         return falso
@@ -91,6 +92,37 @@ class TestFlujoConWinapiSimulada(unittest.TestCase):
             ok, mensaje = rw.conceder_privilegio_huge_pages(nombre_usuario="prueba")
         self.assertFalse(ok)
         falso.LsaClose.assert_called_once()  # se cierra el handle aunque falle
+
+    def test_revocar_exito(self):
+        falso = self._advapi32_falso(estado_open_policy=0, estado_remove_rights=0)
+        with patch.object(rw.ctypes, "WinDLL", return_value=falso), \
+             patch.object(rw.os, "name", "nt"):
+            ok, mensaje = rw.revocar_privilegio_huge_pages(nombre_usuario="prueba")
+        self.assertTrue(ok)
+        self.assertIn("prueba", mensaje)
+        falso.LsaClose.assert_called_once()
+
+    def test_revocar_fallo_al_abrir_politica(self):
+        falso = self._advapi32_falso(estado_open_policy=-1)
+        with patch.object(rw.ctypes, "WinDLL", return_value=falso), \
+             patch.object(rw.os, "name", "nt"):
+            ok, mensaje = rw.revocar_privilegio_huge_pages(nombre_usuario="prueba")
+        self.assertFalse(ok)
+        self.assertIn("administrador", mensaje)
+
+    def test_revocar_fallo_al_quitar_el_permiso(self):
+        falso = self._advapi32_falso(estado_open_policy=0, estado_remove_rights=-1)
+        with patch.object(rw.ctypes, "WinDLL", return_value=falso), \
+             patch.object(rw.os, "name", "nt"):
+            ok, mensaje = rw.revocar_privilegio_huge_pages(nombre_usuario="prueba")
+        self.assertFalse(ok)
+        falso.LsaClose.assert_called_once()
+
+    def test_revocar_no_windows_da_false(self):
+        with patch.object(rw.os, "name", "posix"):
+            ok, mensaje = rw.revocar_privilegio_huge_pages()
+        self.assertFalse(ok)
+        self.assertIn("Windows", mensaje)
 
 
 if __name__ == "__main__":

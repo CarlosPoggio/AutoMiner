@@ -1,5 +1,24 @@
 # Historial de sesiones
 
+## 2026-08-24 (4) — Herramienta de limpieza (rama `limpieza`)
+
+- Nueva rama `limpieza` (desde `develop`, sin fusionar todavía) con
+  `limpieza.bat` + `src/limpieza.py`: borra motores descargados,
+  `config.md`, ajustes de seguridad de Windows tocados para minar más
+  rápido, permiso "huge pages", reglas de cortafuegos/antivirus y el
+  controlador WinRing0 si quedó instalado — y al final borra la propia
+  carpeta del proyecto (autodestrucción completa, decidida así porque
+  Carlos lo pidió explícitamente).
+- Añadida `rendimiento_windows.revocar_privilegio_huge_pages()`
+  (`LsaRemoveAccountRights`), no existía forma de quitar ese permiso
+  antes.
+- A propósito, no toca rastros de ejecución a nivel de sistema
+  operativo (Prefetch, Amcache, registro de sucesos) — ver
+  `docs/DECISIONS.md` entrada 17 para el porqué.
+- 193 tests en verde. Probado `--dry-run` de verdad contra este
+  repositorio y la autodestrucción probada aparte en una carpeta de
+  prueba; nunca ejecutado de verdad contra este repositorio.
+
 ## 2026-08-24 (3) — RVN no mina en GPUs Blackwell (limitación de kawpowminer), KAS ya no se puede minar con GPU
 
 - Nueva ronda de pruebas en el "otro equipo" (GPU RTX 5060, Blackwell),

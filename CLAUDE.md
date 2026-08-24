@@ -64,7 +64,14 @@ en `wallets.md`, y la estimación de `estimacion_ingreso.py` bajo cada
 desplegable; configuración + arranque + logs, todo en una sola app),
 `minar.py` (parsea/valida `config.md`, sabe arrancar CPU y GPU a la vez
 como procesos concurrentes, e interpreta su salida en
-`interpretar_linea`).
+`interpretar_linea`), `limpieza.py` (borra del ordenador cualquier
+rastro de haber minado: motores descargados en `bin/`, `config.md`,
+temporales sueltos, y revierte lo que se haya tocado para minar más
+rápido — protecciones de seguridad de Windows si esta app las
+desactivó, el permiso "huge pages", reglas de cortafuegos/antivirus y
+el controlador WinRing0 si quedó instalado; lo llama `limpieza.bat`,
+ver docs/DECISIONS.md entrada 17 para qué queda fuera de su alcance
+a propósito).
 
 `wallets.md` (en la raíz del repo) guarda las wallets por defecto de
 Carlos, una por moneda (`SIMBOLO: direccion`). A diferencia de
@@ -115,6 +122,13 @@ formato de comando y comisión con fuentes fiables (ver
 - Ejecutar el minado de verdad sin el formulario (con `config.md` ya
   escrito a mano o generado antes): `python3 src/minar.py` — si falta
   el motor de minado, lo descarga solo (ver `src/instalador.py`).
+- Borrar todo rastro de minado (motores, config.md, ajustes de Windows
+  tocados) y, al terminar, la propia carpeta del proyecto: doble click
+  en `limpieza.bat` (pide administrador). Comprobar sin borrar nada de
+  verdad: `python3 src/limpieza.py --dry-run` — **nunca ejecutes
+  `limpieza.bat` ni `src/limpieza.py` sin `--dry-run` por tu cuenta: es
+  irreversible y borra la carpeta entera, solo lo hace Carlos cuando
+  quiere de verdad**.
 
 No hay dependencias externas de Python (todo usa la librería estándar,
 incluyendo Tkinter, la consulta de ingresos por internet y la descarga

@@ -138,6 +138,17 @@ python3 src/minar.py --dry-run
 `minar.py` también instala solo el motor que falte, igual que el
 formulario.
 
+## Borrar todo rastro de minado
+
+Si quieres dejar el ordenador como si nunca se hubiera minado aquí,
+haz doble click en `limpieza.bat` (pide permiso de administrador). No
+se puede deshacer: borra los motores descargados, `config.md` (tu
+wallet), los ajustes de seguridad de Windows que se hayan tocado para
+minar más rápido, y **al terminar, esta misma carpeta del proyecto**
+(el código sigue a salvo en GitHub; para volver a usarlo habría que
+descargarlo de nuevo). Antes de borrar nada te pregunta con una
+ventana, listando exactamente qué va a hacer.
+
 ## Documentación
 
 - `CLAUDE.md`: reglas y comandos para seguir trabajando en este proyecto.

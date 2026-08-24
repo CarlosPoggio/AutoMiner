@@ -1006,3 +1006,86 @@ hizo el diagnóstico están citados dentro del propio `GPU_ERROR.md`
 (ya borrado de la raíz una vez incorporado aquí) — repositorios
 oficiales de `RavenCommunity/kawpowminer`, `ethereum-mining/ethminer` y
 `Lolliedieb/lolMiner-releases`.
+
+## 17 — Herramienta de limpieza (`limpieza.bat` / `src/limpieza.py`), rama `limpieza`
+
+Pediste una herramienta con doble click que borre de tu ordenador
+cualquier rastro de haber minado, y que la propia carpeta del proyecto
+desaparezca al terminar (autodestrucción completa; el código sigue a
+salvo en GitHub). Diste un criterio claro para decidir qué cuenta como
+"rastro": lo específico de minar se borra; lo de propósito general
+(Python, aunque haga falta para minar) se queda, porque tenerlo
+instalado no es una prueba de haber minado.
+
+Trabajo en rama nueva (`limpieza`, creada desde `develop`), sin tocar
+`develop` todavía — es una herramienta irreversible y quería que
+pudieras revisarla antes de que llegue a la rama principal.
+
+**Qué borra o revierte `src/limpieza.py`** (con `--dry-run` se puede
+ver todo esto sin tocar nada de verdad):
+- `config.md` (la wallet y la moneda elegidas).
+- Todo lo descargado en `bin/` — los tres motores, sus carpetas
+  descomprimidas, las DLLs/`.sys` que traen, `bin/_descargas/` — salvo
+  `bin/LEEME.md`, que es parte del propio repositorio, no algo
+  generado al minar.
+- Cualquier `.log` suelto en la raíz (red de seguridad; con la
+  configuración que usa este proyecto ningún motor debería dejar uno).
+- Las dos protecciones de seguridad de Windows (Aislamiento del
+  núcleo, lista de controladores vulnerables bloqueados) — **solo si
+  hay una marca de que fue esta app quien las desactivó** (el mismo
+  fichero de marca que ya usan `aislamiento_nucleo.py` y
+  `lista_controladores_vulnerables.py` desde las entradas 14 y 15); si
+  las desactivaste tú por tu cuenta, por otro motivo, no se tocan.
+- El permiso "huge pages" (`SeLockMemoryPrivilege`): se añadió
+  `revocar_privilegio_huge_pages()` a `rendimiento_windows.py`
+  (`LsaRemoveAccountRights`, la función inversa de
+  `LsaAddAccountRights` que ya se usaba — misma documentación oficial
+  de Microsoft, mismo patrón de código). No existía forma de quitarlo
+  antes de ahora porque nunca había hecho falta.
+- Reglas de cortafuegos y excepción de antivirus para los tres
+  motores, y el controlador `WinRing0_1_2_0` por si quedó instalado
+  como servicio de Windows tras un cierre brusco del MSR mod — estos
+  tres son "mejor esfuerzo": se intentan con `netsh`/PowerShell/`sc.exe`
+  y nunca hacen fallar el resto de la limpieza si no encuentran nada
+  que quitar (lo normal, si nunca se dio permiso de cortafuegos o
+  excepción de antivirus).
+
+**Qué NO toca, a propósito, aunque el pedido fuera "que no quede
+ninguna pista en ninguna ubicación"**: rastros de ejecución a nivel de
+sistema operativo (Prefetch, Amcache, registro de sucesos de
+Windows...). Borrar eso ya no es "limpiar una app que se desinstala"
+—que es lo que hace cualquier desinstalador normal—, es manipular el
+historial del propio sistema operativo; no lo he construido aunque me
+lo pidieras de forma tan amplia, porque cruza a un terreno distinto
+(antiforense) que no depende de si el ordenador es tuyo o no. Si esto
+no es lo que necesitabas, dímelo y hablamos de qué hace falta
+exactamente.
+
+**La autodestrucción de la carpeta** vive en `limpieza.bat`, no en
+Python: genera un `.cmd` aparte en `%TEMP%` (evita anidar comillas en
+una sola línea, frágil si la ruta tiene espacios), sale de la carpeta
+del proyecto (`cd` a `%TEMP%`, necesario porque Windows bloquea borrar
+una carpeta que es el directorio de trabajo de un proceso vivo), y ese
+`.cmd` espera 2 segundos, borra la carpeta entera, y se borra él mismo
+al final. Probado de verdad (no solo leído) contra una carpeta de
+prueba en `%TEMP%`, nunca contra este repositorio.
+
+**Confirmación antes de borrar**: `limpieza.py` pregunta con una
+ventana (`tkinter.messagebox`) antes de tocar nada, listando
+exactamente qué se va a borrar — es irreversible, así que no debía
+bastar con hacer doble click sin darse cuenta. Si no hay Python
+instalado, `limpieza.bat` tiene un camino alternativo en batch puro
+(pide escribir "SI") que borra lo que se pueda sin Python, avisando de
+que los ajustes de seguridad de Windows no se podrán revertir sin él.
+
+Verificado: 193 tests en verde (170 + 19 nuevos de `limpieza.py`, con
+directorios temporales y sin tocar Windows de verdad, + 4 nuevos de
+`revocar_privilegio_huge_pages` con la misma API de Windows simulada
+que ya usaban los tests de `conceder_privilegio_huge_pages`), `python
+-m py_compile`, `python3 src/limpieza.py --dry-run` ejecutado de
+verdad contra este mismo repositorio (no borró nada, como debía), y el
+mecanismo de autodestrucción de `limpieza.bat` probado en una carpeta
+de prueba aparte. **No se ha ejecutado `limpieza.bat` de verdad, ni
+`src/limpieza.py` sin `--dry-run`, contra este repositorio** — borraría
+esta misma carpeta de trabajo; eso solo debe hacerlo Carlos, cuando
+quiera de verdad, con doble click.
