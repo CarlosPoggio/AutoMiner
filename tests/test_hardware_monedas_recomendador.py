@@ -31,8 +31,10 @@ class TestCatalogoMonedas(unittest.TestCase):
         self.assertEqual(len(ordenes_gpu), len(set(ordenes_gpu)))
 
     def test_monedas_soportadas_hoy_coinciden_con_minar(self):
+        # KAS se quitó el 2026-08-24: lolMiner ya no soporta su algoritmo
+        # (ver docs/DECISIONS.md).
         soportadas = {s for s, d in monedas.TODAS_LAS_MONEDAS.items() if d["soportado_por_minar_hoy"]}
-        self.assertEqual(soportadas, {"XMR", "WOW", "ZEPH", "SAL", "RTM", "RVN", "KAS", "ALPH"})
+        self.assertEqual(soportadas, {"XMR", "WOW", "ZEPH", "SAL", "RTM", "RVN", "ALPH"})
         # Todas las soportadas hoy deben estar también en minar.py.
         import minar
 
@@ -40,7 +42,7 @@ class TestCatalogoMonedas(unittest.TestCase):
             self.assertIsNotNone(minar.resolver_moneda(simbolo), msg=simbolo)
 
     def test_monedas_gpu_soportadas_tienen_comision_documentada(self):
-        for simbolo in ("RVN", "KAS", "ALPH"):
+        for simbolo in ("RVN", "ALPH"):
             self.assertIn("comision_pct", monedas.MONEDAS_GPU[simbolo], msg=simbolo)
 
 

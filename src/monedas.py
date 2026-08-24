@@ -16,10 +16,12 @@ Cada moneda incluye:
 - motor: el programa externo que haría el minado de verdad.
 - soportado_por_minar_hoy: si `src/minar.py` ya sabe construir el comando
   para arrancar esta moneda. Hoy: Monero, Wownero, Zephyr, Salvium y
-  Raptoreum (CPU, motor xmrig) y Ravencoin, Kaspa y Alephium (GPU,
-  motores kawpowminer/lolMiner). El resto necesitaría instalar y
-  controlar otro programa de minado distinto: un paso futuro a
-  propósito, no de esta versión.
+  Raptoreum (CPU, motor xmrig) y Ravencoin y Alephium (GPU, motores
+  kawpowminer/lolMiner). Kaspa se quitó de aquí el 2026-08-24: lolMiner
+  retiró el algoritmo que usaba (ver "riesgo" en su entrada, más abajo,
+  y docs/DECISIONS.md). El resto necesitaría instalar y controlar otro
+  programa de minado distinto: un paso futuro a propósito, no de esta
+  versión.
 - comision_pct: comisión aproximada del motor de minado (0 si es
   gratuito de verdad, como xmrig con --donate-level 0 o kawpowminer).
   Solo está rellena para las monedas ya soportadas.
@@ -28,15 +30,18 @@ Cada moneda incluye:
   bajo el número, mejor posición tenía el 2026-08-20).
 - riesgo: nota opcional si es una moneda pequeña/poco líquida.
 
-IMPORTANTE sobre las monedas de GPU ya soportadas (KAS, RVN, ALPH): el
+IMPORTANTE sobre las monedas de GPU ya soportadas (RVN, ALPH): el
 comando que genera minar.py para ellas está probado (con un ejecutable
-de prueba, ver docs/DECISIONS.md), pero nunca se ha ejecutado contra una
-tarjeta gráfica real ni un pool real, porque el entorno donde se
-desarrolló este proyecto no tiene GPU. Por convención, en el formulario
+de prueba, ver docs/DECISIONS.md), pero ninguna se ha confirmado minando
+de verdad contra un pool real todavía. Por convención, en el formulario
 y en la documentación, toda moneda con tipo "gpu" y
 soportado_por_minar_hoy=True se marca como "sin confirmar en hardware
 real" hasta que alguien la pruebe de verdad y lo confirme (entonces se
-puede añadir aquí un comentario con la fecha de confirmación).
+puede añadir aquí un comentario con la fecha de confirmación). RVN, en
+concreto, ya se probó contra una GPU NVIDIA real (RTX 5060, Blackwell)
+y el motor arranca, pero falla por una limitación del propio
+kawpowminer con esa generación de tarjeta (ver su "riesgo" más abajo y
+docs/DECISIONS.md) — sigue sin confirmarse un minado real completo.
 """
 
 MONEDAS_CPU = {
@@ -124,11 +129,24 @@ MONEDAS_CPU = {
 MONEDAS_GPU = {
     "KAS": {
         "nombre": "Kaspa", "algoritmo": "kHeavyHash", "vram_min_gb": 2, "motor": "lolMiner",
-        "soportado_por_minar_hoy": True, "comision_pct": 0.75, "orden_respaldo": 1,
+        "soportado_por_minar_hoy": False, "orden_respaldo": 1,
+        "riesgo": (
+            "Ya no se puede minar con GPU: lolMiner retiró el algoritmo "
+            "kHeavyHash de sus versiones recientes (la red de Kaspa está "
+            "dominada por ASICs desde 2023-2024). Confirmado con "
+            "--list-algos el 2026-08-24; ver docs/DECISIONS.md."
+        ),
     },
     "RVN": {
         "nombre": "Ravencoin", "algoritmo": "KawPow", "vram_min_gb": 4, "motor": "kawpowminer",
         "soportado_por_minar_hoy": True, "comision_pct": 0.0, "orden_respaldo": 3,
+        "riesgo": (
+            "En GPUs NVIDIA de la generación Blackwell (RTX 50, "
+            "Compute 12.0) no mina hoy: kawpowminer trae un CUDA "
+            "demasiado antiguo para esa arquitectura (\"invalid device "
+            "symbol\"). Es una limitación del propio kawpowminer, no de "
+            "esta app — ver docs/DECISIONS.md."
+        ),
     },
     "ERG": {"nombre": "Ergo", "algoritmo": "Autolykos2", "vram_min_gb": 6, "motor": "lolMiner / T-Rex", "orden_respaldo": 4},
     "ETC": {"nombre": "Ethereum Classic", "algoritmo": "Etchash", "vram_min_gb": 6, "motor": "T-Rex / gminer", "orden_respaldo": 5},

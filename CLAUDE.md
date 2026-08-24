@@ -74,19 +74,24 @@ clave privada). Si se toca este fichero, nunca hay que escribir en él
 una clave privada o frase semilla real.
 
 Monedas soportadas hoy por `minar.py` (ver tabla completa en README.md):
-XMR, WOW, ZEPH, SAL, RTM (CPU, motor xmrig) y RVN, KAS, ALPH (GPU,
-motores kawpowminer/lolMiner). Las de GPU están implementadas y con
-tests, pero **todavía sin confirmar contra una GPU real** — están
-marcadas como tal en `monedas.py` (`tipo == "gpu"` +
-`soportado_por_minar_hoy == True` implica "sin confirmar" por
-convención, vía `OpcionMoneda.confirmado_en_hardware_real` en
-`recomendador.py`, que hoy da por hecho que ninguna GPU está
-confirmada) y en la interfaz del formulario (icono 🧪). El ordenador de
-Carlos SÍ tiene GPU real (NVIDIA RTX 4060 Laptop, 8GB — detectada por
-`hardware.py` en esta misma máquina), así que en cuanto confirme que
-alguna de estas tres mina de verdad, hay que actualizar
-`confirmado_en_hardware_real` (o el dato correspondiente en
-`monedas.py`) para que pase a mostrarse con ✅ en vez de 🧪.
+XMR, WOW, ZEPH, SAL, RTM (CPU, motor xmrig) y RVN, ALPH (GPU, motores
+kawpowminer/lolMiner). Las de GPU están implementadas y con tests, pero
+**todavía sin confirmar contra una GPU real** — están marcadas como tal
+en `monedas.py` (`tipo == "gpu"` + `soportado_por_minar_hoy == True`
+implica "sin confirmar" por convención, vía
+`OpcionMoneda.confirmado_en_hardware_real` en `recomendador.py`, que
+hoy da por hecho que ninguna GPU está confirmada) y en la interfaz del
+formulario (icono 🧪). El ordenador de Carlos SÍ tiene GPU real (NVIDIA
+RTX 4060 Laptop, 8GB — detectada por `hardware.py` en esta misma
+máquina), así que en cuanto confirme que alguna de estas mina de
+verdad, hay que actualizar `confirmado_en_hardware_real` (o el dato
+correspondiente en `monedas.py`) para que pase a mostrarse con ✅ en vez
+de 🧪. **KAS se quitó de la lista el 2026-08-24** (lolMiner retiró su
+algoritmo, ver docs/DECISIONS.md); **RVN, probado en otro ordenador con
+una GPU NVIDIA Blackwell (RTX 50), arranca pero no llega a minar** por
+una limitación de kawpowminer con esa generación de tarjeta — sigue
+soportada porque en GPUs NVIDIA más antiguas no debería tener ese
+problema.
 Añadir una moneda nueva que ya use un motor existente (mismo xmrig,
 kawpowminer o lolMiner) es sencillo; añadir una que necesite un motor
 distinto implica registrarlo primero en `motores.py`, investigando pool,

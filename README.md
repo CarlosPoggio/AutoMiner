@@ -94,14 +94,27 @@ para no confundir, hasta que se implementen):
 | Zephyr (ZEPH) | CPU | XMRig | 1% (ajustable) | ✅ |
 | Salvium (SAL) | CPU | XMRig | 1% (ajustable) | ✅ |
 | Raptoreum (RTM) | CPU | XMRig | 1% (ajustable) | ✅ |
-| Ravencoin (RVN) | GPU | kawpowminer | 0% | 🧪 sin confirmar |
-| Kaspa (KAS) | GPU | lolMiner | 0,75% | 🧪 sin confirmar |
+| Ravencoin (RVN) | GPU | kawpowminer | 0% | 🧪 sin confirmar (ver nota) |
 | Alephium (ALPH) | GPU | lolMiner | 0,75% | 🧪 sin confirmar |
 
 "Sin confirmar" significa: el comando que se genera está comprobado
-(con un programa de prueba), pero nunca se ha ejecutado contra una
-tarjeta gráfica real, porque se desarrolló en un entorno sin GPU.
-Pruébalo en tu ordenador y cuenta qué tal ha ido.
+(con un programa de prueba), pero ninguna se ha confirmado minando de
+verdad de principio a fin contra un pool real todavía. Pruébalo en tu
+ordenador y cuenta qué tal ha ido.
+
+**Nota sobre Ravencoin (RVN) en GPUs NVIDIA nuevas**: si tu tarjeta es
+de la generación Blackwell (RTX 50, por ejemplo una RTX 5060),
+kawpowminer no consigue minar hoy — el programa trae un CUDA demasiado
+antiguo para esa arquitectura tan nueva. Es una limitación del propio
+kawpowminer (un programa externo que no controlamos), no de esta app;
+verás un aviso claro en el registro si te pasa. En GPUs NVIDIA algo más
+antiguas debería funcionar con normalidad. Ver `docs/DECISIONS.md` para
+el detalle.
+
+**Kaspa (KAS) se quitó de esta lista el 2026-08-24**: lolMiner retiró
+el algoritmo que necesitaba (la red de Kaspa está dominada por ASICs
+desde 2023-2024, ya no compensa minarla con GPU) — ver
+`docs/DECISIONS.md`.
 
 Si quieres minar alguna otra moneda del catálogo más amplio (ver
 `src/monedas.py`), pide que se añada su motor de minado primero.

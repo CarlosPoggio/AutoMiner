@@ -15,7 +15,9 @@ frase semilla** — eso sí debe permanecer secreto, y no tiene nada que
 ver con la dirección de recibir.
 
 Monedas soportadas hoy (ver README.md para la lista completa):
-XMR, WOW, ZEPH, SAL, RTM (CPU) y RVN, KAS, ALPH (GPU).
+XMR, WOW, ZEPH, SAL, RTM (CPU) y RVN, ALPH (GPU). KAS ya no se puede
+minar con GPU (lolMiner retiró su algoritmo, ver docs/DECISIONS.md), así
+que aunque dejes una wallet suya abajo, no aparecerá en el formulario.
 
 Ejemplo (borra el # para activar la línea y pon tu dirección real):
 

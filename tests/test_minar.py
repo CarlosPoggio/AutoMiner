@@ -108,21 +108,17 @@ class TestConstruirComando(unittest.TestCase):
         bloques = minar.validar({"cpu_wallet": "RUZb2pp45x5qAjbS3usXAGW8BzK1fvKJBo", "cpu_moneda": "RTM"})
         self.assertEqual(bloques["cpu"][1], "RTM")
 
-    def test_rvn_kas_alph_estan_soportadas(self):
-        for simbolo in ("RVN", "KAS", "ALPH"):
+    def test_rvn_alph_estan_soportadas(self):
+        # KAS se quitó el 2026-08-24: lolMiner ya no soporta su algoritmo
+        # (ver docs/DECISIONS.md).
+        for simbolo in ("RVN", "ALPH"):
             self.assertIn(simbolo, minar.MONEDAS_SOPORTADAS, msg=simbolo)
+        self.assertNotIn("KAS", minar.MONEDAS_SOPORTADAS)
 
     def test_construir_comando_ravencoin_usa_kawpowminer(self):
         datos = {"wallet": "Rwallet", "moneda": "RVN"}
         cmd = minar.construir_comando("kawpowminer", "Rwallet", "RVN", datos)
         self.assertEqual(cmd, ["kawpowminer", "-P", "stratum+tcp://Rwallet.rig1@stratum.ravenminer.com:3838"])
-
-    def test_construir_comando_kaspa_usa_lolminer_algo_kaspa(self):
-        datos = {"wallet": "kaspa:qwallet", "moneda": "KAS"}
-        cmd = minar.construir_comando("lolMiner", "kaspa:qwallet", "KAS", datos)
-        self.assertIn("--algo", cmd)
-        self.assertIn("KASPA", cmd)
-        self.assertIn("de.kaspa.herominers.com:1206", cmd)
 
     def test_construir_comando_alephium_usa_lolminer_algo_aleph(self):
         datos = {"wallet": "alphwallet", "moneda": "ALPH"}
@@ -166,6 +162,21 @@ class TestInterpretarLinea(unittest.TestCase):
 
     def test_fail(self):
         self.assertTrue(minar.interpretar_linea("login failed").startswith("❌"))
+
+    def test_gpu_demasiado_nueva_da_explicacion_clara(self):
+        # Caso real reportado en GPU_ERROR.md: kawpowminer contra una GPU
+        # Blackwell (RTX 50). Debe explicarse en español simple, no dejar
+        # pasar el mensaje críptico de CUDA sin más.
+        linea = (
+            "cu 13:53:34 cuda-0 Unexpected error CUDA error in func "
+            "set_constants at line 180 calling cudaMemcpyToSymbol(d_dag, "
+            "&_dag, sizeof(hash64_t*)) failed with error invalid device "
+            "symbol on CUDA device 01:00.0"
+        )
+        salida = minar.interpretar_linea(linea)
+        self.assertTrue(salida.startswith("❌"))
+        self.assertIn("demasiado nueva", salida)
+        self.assertNotIn("cudaMemcpyToSymbol", salida)
 
     def test_ruido_devuelve_none(self):
         self.assertIsNone(minar.interpretar_linea("* THREADS       8"))

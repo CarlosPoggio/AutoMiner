@@ -928,3 +928,81 @@ ordenadores distintos (el tuyo, con la RTX 4060 Laptop, y el "otro
 equipo" donde probaste GPU, con otra tarjeta) — así que no he tocado el
 dato de `CLAUDE.md`, que sigue describiendo correctamente este
 ordenador.
+
+## 2026-08-24 (17) — RVN no mina en GPUs Blackwell (kawpowminer), y KAS ya no se puede minar con GPU (lolMiner)
+
+Nueva ronda de pruebas en el "otro equipo" (GPU NVIDIA RTX 5060,
+generación Blackwell), con otro `GPU_ERROR.md` subido a `develop` con
+el diagnóstico. Dos problemas distintos, ninguno arreglable tocando
+nuestro código — verifiqué el análisis antes de actuar y es correcto en
+los dos casos, con reproducción real (`--benchmark`/`--list-algos`, sin
+pool ni wallet de por medio):
+
+**RVN (kawpowminer) — "invalid device symbol"**: el bug de las DLLs de
+NVRTC de la entrada 16 ya está resuelto, kawpowminer arranca de verdad,
+pero falla al generar el DAG en la GPU. Causa: kawpowminer 1.2.4 trae
+compilado un CUDA 11.2 que no conoce la arquitectura "Compute 12.0" de
+las GPUs Blackwell (RTX 50, lanzadas en 2025) — es el mismo fallo
+conocido y documentado que kawpowminer/ethminer arrastran desde 2020
+cada vez que sale una GPU NVIDIA más nueva que su CUDA interno (varios
+issues de años distintos, mismo error exacto, con GPUs cada vez más
+recientes). No es arreglable sin recompilar kawpowminer contra un CUDA
+más moderno, algo fuera del alcance de este proyecto.
+
+Decisión: **RVN se queda como estaba** (`soportado_por_minar_hoy: True`
+en `monedas.py`), porque el problema es específico de esta generación
+de GPU muy reciente, no de kawpowminer en general — en una GPU NVIDIA
+algo más antigua (como la RTX 4060 Laptop de este ordenador) no hay
+motivo para que falle igual. Lo que sí cambié:
+- `src/minar.py` (`interpretar_linea`): antes, este error se mostraba
+  tal cual, en inglés y con jerga técnica de CUDA ("cudaMemcpyToSymbol
+  failed with error invalid device symbol..."). Ahora se reconoce ese
+  caso concreto y se traduce a una frase clara: que la tarjeta es
+  demasiado nueva para el programa de minado, y que no es un fallo de
+  esta app.
+- `src/monedas.py`: nota (`riesgo`) en la entrada de RVN explicando la
+  limitación, para que quede documentada donde se consulta el catálogo.
+- README.md y `CLAUDE.md` actualizados con el mismo aviso.
+
+**KAS (lolMiner) — "--algo option KASPA is not supported"**: causa 100%
+confirmada, sin ambigüedad. `lolMiner` retiró el algoritmo kHeavyHash
+(el que usa Kaspa) de sus versiones recientes — confirmado ejecutando
+`lolMiner.exe --list-algos` en la 1.98a (la última release oficial):
+"KASPA" no aparece en absoluto en la lista. Según varios issues del
+propio repositorio de lolMiner (2023-2024) y fuentes externas, el
+motivo es que la red de Kaspa está dominada por ASICs dedicados desde
+esos años, así que minar kHeavyHash con GPU dejó de compensar y el
+propio autor quitó el algoritmo. A diferencia de RVN, esto no depende
+de qué GPU tengas: **no hay ninguna forma de minar KAS con GPU hoy,
+con el catálogo de motores de este proyecto, en ningún ordenador.**
+
+Decisión: **quitar KAS de las monedas activas** (opción que el propio
+diagnóstico recomendaba, la más honesta):
+- `src/minar.py`: eliminada la entrada `"KAS"` de `MONEDAS_SOPORTADAS`
+  (ya no se genera ningún comando para ella).
+- `src/monedas.py`: `soportado_por_minar_hoy: False` para KAS, con nota
+  (`riesgo`) explicando el motivo y la fecha en que se confirmó.
+- El formulario deja de mostrar KAS en el desplegable de GPU
+  automáticamente (usa el mismo filtro `soportado_por_minar_hoy` que ya
+  existía; no hizo falta tocar `formulario.py`).
+- README.md, `CLAUDE.md` y la cabecera de `wallets.md` actualizados.
+  Pusiste tu wallet de Kaspa en `wallets.md` antes de este diagnóstico
+  (parte de las pruebas del punto 3 del `GPU_ERROR.md` anterior) — la
+  dejé tal cual, no borro datos tuyos; simplemente no se usará hasta
+  que en algún momento se decida soportar una moneda equivalente
+  (lolMiner mantiene Karlsen y Pyrin, familia de algoritmo parecida
+  pero monedas distintas — no aplicado, a decidir si algún día
+  interesa).
+
+Verificado: 170 tests en verde (se quitó el test que validaba el
+comando de KAS —ya no tiene sentido, probaba un comportamiento que
+sabemos roto a propósito— y se añadió uno nuevo para la traducción del
+error de RVN). No se ha ejecutado minado real de ninguna de las dos
+monedas en ningún pool; toda la reproducción fue offline
+(`--benchmark`/`--list-algos`), como en la entrada 16.
+
+Fuentes: los issues y enlaces exactos consultados por la sesión que
+hizo el diagnóstico están citados dentro del propio `GPU_ERROR.md`
+(ya borrado de la raíz una vez incorporado aquí) — repositorios
+oficiales de `RavenCommunity/kawpowminer`, `ethereum-mining/ethminer` y
+`Lolliedieb/lolMiner-releases`.

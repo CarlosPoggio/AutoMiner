@@ -1,5 +1,34 @@
 # Historial de sesiones
 
+## 2026-08-24 (3) — RVN no mina en GPUs Blackwell (limitación de kawpowminer), KAS ya no se puede minar con GPU
+
+- Nueva ronda de pruebas en el "otro equipo" (GPU RTX 5060, Blackwell),
+  diagnosticadas de nuevo vía `GPU_ERROR.md` y verificadas antes de
+  actuar. Dos problemas distintos, ninguno arreglable en nuestro código:
+  - **RVN**: kawpowminer arranca (el bug de las DLLs ya está resuelto)
+    pero falla con "invalid device symbol" al generar el DAG — su CUDA
+    11.2 interno no soporta la arquitectura Compute 12.0 de las GPUs
+    Blackwell (fallo conocido y repetido desde 2020 con cada GPU NVIDIA
+    más nueva). Se mantiene soportada (no afecta a GPUs más antiguas),
+    pero `minar.py` (`interpretar_linea`) ahora traduce ese error
+    técnico a una explicación clara en vez de mostrar la jerga de CUDA
+    tal cual. Nota añadida en `monedas.py`, README.md y `CLAUDE.md`.
+  - **KAS**: confirmado con `lolMiner.exe --list-algos` que la versión
+    actual de lolMiner ya no soporta el algoritmo de Kaspa (retirado
+    desde que la red se volvió ASIC-dominada, 2023-2024) — no depende
+    del hardware, no se puede minar con GPU hoy con ningún motor de
+    este proyecto. Quitada de `minar.py` (`MONEDAS_SOPORTADAS`) y
+    marcada `soportado_por_minar_hoy: False` en `monedas.py`; el
+    formulario deja de ofrecerla automáticamente (mismo filtro de
+    siempre). README.md, `CLAUDE.md` y `wallets.md` actualizados (tu
+    wallet de Kaspa se deja tal cual en `wallets.md`, solo queda sin
+    usar por ahora).
+- 170 tests en verde (se quitó un test que validaba el comando roto de
+  KAS a propósito, se añadió uno nuevo para la traducción del error de
+  RVN).
+- `GPU_ERROR.md` eliminado otra vez (era solo diagnóstico temporal).
+- `docs/DECISIONS.md` con el detalle completo y las fuentes.
+
 ## 2026-08-24 (2) — kawpowminer/NVIDIA no arrancaba: faltaban las DLLs de NVRTC
 
 - Diagnóstico recibido vía `GPU_ERROR.md` (otra sesión de Claude Code,

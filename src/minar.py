@@ -87,14 +87,6 @@ MONEDAS_SOPORTADAS = {
         "wallet_regex": r"^R[1-9A-HJ-NP-Za-km-z]{33}$",
         "gpu": True,
     },
-    "KAS": {
-        "nombre": "Kaspa",
-        "algo": "KASPA",
-        "motor": "lolminer",
-        "pool_por_defecto": "de.kaspa.herominers.com:1206",
-        "wallet_regex": r"^kaspa:[a-z0-9]{50,80}$",
-        "gpu": True,
-    },
     "ALPH": {
         "nombre": "Alephium",
         "algo": "ALEPH",
@@ -304,6 +296,19 @@ def interpretar_linea(linea_cruda: str) -> str | None:
         idx = l.index("speed")
         resto = linea_cruda[idx:].strip()
         return f"⚡ Velocidad: {resto}" if resto else f"⚡ Velocidad: {linea_cruda.strip()}"
+    # "invalid device symbol" se comprueba antes que el genérico de abajo
+    # porque, si no, también contiene la palabra "error" y saldría como un
+    # error críptico en inglés en vez de esta explicación. Es el fallo
+    # exacto de kawpowminer cuando la GPU es más nueva que el CUDA que
+    # trae el propio programa (confirmado con GPUs Blackwell/RTX 50 —
+    # ver docs/DECISIONS.md): no es un fallo de esta app ni de tu wallet,
+    # es una limitación conocida del programa de minado externo.
+    if "invalid device symbol" in l:
+        return (
+            "❌ Tu tarjeta gráfica es demasiado nueva para este programa de "
+            "minado (kawpowminer no sabe usarla todavía) — no es un fallo "
+            "de esta app. Ver docs/DECISIONS.md para el detalle."
+        )
     # Los errores se comprueban antes que "connect" porque una línea de
     # "connection error" contiene ambas palabras y debe salir como error.
     if "error" in l or "fail" in l:
