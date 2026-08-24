@@ -163,6 +163,13 @@ class TestInterpretarLinea(unittest.TestCase):
     def test_fail(self):
         self.assertTrue(minar.interpretar_linea("login failed").startswith("❌"))
 
+    def test_velocidad_lolminer_una_gpu_no_sale_redundante(self):
+        # Antes de este arreglo, esta línea contenía la palabra "speed" y
+        # caía en el caso genérico, saliendo como "Velocidad: speed (15s):
+        # 1055.99 Mh/s" (redundante y confuso).
+        salida = minar.interpretar_linea("[GPU] Average speed (15s): 1055.99 Mh/s")
+        self.assertEqual(salida, "⚡ Velocidad: 1055.99 Mh/s")
+
     def test_velocidad_kawpowminer_se_reconoce(self):
         # Formato real de kawpowminer, capturado minando de verdad con una
         # GPU real (RTX 4060 Laptop) — no contiene la palabra "speed", así
@@ -234,6 +241,17 @@ class TestExtraerHashrateReal(unittest.TestCase):
         self.assertIsNotNone(resultado)
         hz, texto = resultado
         self.assertAlmostEqual(hz, 43.37 * 1e6)
+
+    def test_lolminer_una_sola_gpu_sin_total(self):
+        # Formato real capturado minando ALPH de verdad con una sola GPU
+        # (2026-08-24): no hay ningún "Total", solo "Average speed". El
+        # patrón original nunca coincidía con esto — ver docs/DECISIONS.md.
+        linea = "[GPU] Average speed (15s): 1055.99 Mh/s"
+        resultado = minar.extraer_hashrate_real(linea, "lolminer")
+        self.assertIsNotNone(resultado)
+        hz, texto = resultado
+        self.assertAlmostEqual(hz, 1055.99 * 1e6)
+        self.assertIn("mh/s", texto.lower())
 
     def test_linea_sin_hashrate_da_none(self):
         self.assertIsNone(minar.extraer_hashrate_real("net accepted (1/0)", "xmrig"))

@@ -24,16 +24,23 @@ class OpcionMoneda:
     soportado_por_minar_hoy: bool
     riesgo: str | None = None
     comision_pct: float | None = None
+    # Solo se pone a True a mano en monedas.py, moneda por moneda, cuando
+    # alguien confirma un minado real de verdad contra esa GPU (ver
+    # docs/DECISIONS.md). Por defecto, ninguna de GPU está confirmada.
+    confirmado_gpu: bool = False
 
     @property
     def confirmado_en_hardware_real(self) -> bool:
         """
-        Todas las monedas de GPU ya soportadas se probaron con un
-        ejecutable de prueba, pero nunca contra una tarjeta gráfica real
-        (ver docs/DECISIONS.md). Las de CPU sí se han podido probar en un
-        entorno con procesador de verdad.
+        Las monedas de CPU soportadas se han podido probar en un entorno
+        con procesador real. Las de GPU, por defecto, solo se probaron
+        con un ejecutable de prueba, no contra una tarjeta real — salvo
+        que monedas.py la marque explícitamente como confirmada tras un
+        minado real con éxito (ver `confirmado_gpu` arriba).
         """
-        return self.soportado_por_minar_hoy and self.tipo == "cpu"
+        if self.tipo == "cpu":
+            return self.soportado_por_minar_hoy
+        return self.confirmado_gpu
 
 
 def monedas_cpu_posibles(cpu: InfoCPU | None) -> list[str]:
@@ -78,6 +85,7 @@ def construir_opciones(simbolos: list[str]) -> list[OpcionMoneda]:
                 soportado_por_minar_hoy=datos["soportado_por_minar_hoy"],
                 riesgo=datos.get("riesgo"),
                 comision_pct=datos.get("comision_pct"),
+                confirmado_gpu=datos.get("confirmado_en_hardware_real", False),
             )
         )
     return opciones

@@ -31,14 +31,28 @@ número inventado; ver el informe de la sesión que añadió este módulo):
   distinta, un token meme en Base), así que no hay precio fiable.
 - RTM (Raptoreum): no se encontró una API pública, gratuita y verificable
   con dificultad/recompensa en vivo.
-- ALPH (Alephium): su algoritmo (Blake3) es multi-cadena y no se encontró
-  una fuente que diese el hashrate de red ya calculado de forma fiable;
-  se prefiere no estimar antes que arriesgar una cifra mal calculada.
 
-Todo usa solo la librería estándar (urllib, json), sin dependencias.
+ALPH (Alephium) SÍ tiene estimación desde el 2026-08-24: el pool HeroMiners
+que ya usamos por defecto (alephium.herominers.com) da la dificultad de
+red y la recompensa por bloque en vivo, y CoinGecko sí tiene su precio
+(id "alephium", verificado que es la moneda correcta y no otro token con
+el mismo símbolo). La fórmula de dificultad→hashrate se contrastó contra
+los pagos diarios reales del pool antes de usarla, no se dio por buena a
+ciegas (ver docs/DECISIONS.md). A diferencia de xmr/sal/zeph, el formato
+de bloque de este pool para ALPH no se puede parsear con el mismo
+ayudante genérico (_reward_de_bloques_herominers): trae un campo
+hexadecimal extra que a veces "parece" una dirección y confundiría al
+parser; en su lugar se busca el campo que de verdad tiene forma de
+dirección real de Alephium (misma regex que src/minar.py). El campo
+pool.stats.averageReward, que en teoría daría la recompensa ya calculada
+sin parsear nada, se descartó por no ser fiable: en pruebas reales viene
+vacío (null) parte del tiempo.
+
+Todo usa solo la librería estándar (urllib, json, re), sin dependencias.
 """
 
 import json
+import re
 import time
 import urllib.error
 import urllib.request
@@ -58,6 +72,7 @@ REFERENCIA_HASHRATE = {
     "ZEPH": (1000.0, "1 kH/s"),  # RandomX (rx/0)
     "RVN": (1e7, "10 MH/s"),     # KawPow
     "KAS": (1e9, "1 GH/s"),      # kHeavyHash
+    "ALPH": (1e9, "1 GH/s"),     # Blake3 — orden de magnitud real, visto en GPU
 }
 
 # ids de CoinGecko (verificados en vivo). Solo los de monedas que sí
@@ -68,6 +83,7 @@ COINGECKO_IDS = {
     "ZEPH": "zephyr-protocol",
     "RVN": "ravencoin",
     "KAS": "kaspa",
+    "ALPH": "alephium",
 }
 URL_COINGECKO = "https://api.coingecko.com/api/v3/simple/price"
 
@@ -186,10 +202,57 @@ def _fetch_zeph():
     return _fetch_cryptonote_herominers("zephyr.herominers.com")
 
 
+# Regex de una dirección real de Alephium (misma que
+# minar.MONEDAS_SOPORTADAS["ALPH"]["wallet_regex"], repetida aquí para no
+# depender de minar.py desde este módulo). Los bloques de
+# alephium.herominers.com traen un campo hexadecimal extra (lleno de
+# ceros) que el parser genérico de HeroMiners confundiría con una
+# dirección; una dirección real de Alephium nunca contiene "0", así que
+# esta regex sí distingue bien los dos casos.
+_RE_DIRECCION_ALPH = re.compile(r"^[1-9A-HJ-NP-Za-km-z]{44,58}$")
+
+
+def _reward_alph_de_bloques(bloques, coin_units: int):
+    """Como _reward_de_bloques_herominers, pero buscando específicamente
+    un campo con forma de dirección real de Alephium en vez de "cualquier
+    token largo alfanumérico" — ver _RE_DIRECCION_ALPH."""
+    for entrada in bloques:
+        if not isinstance(entrada, str):
+            continue
+        partes = entrada.split(":")
+        for i, p in enumerate(partes):
+            if i > 0 and _RE_DIRECCION_ALPH.match(p):
+                try:
+                    atomicas = int(partes[i - 1])
+                except ValueError:
+                    break
+                if atomicas > 0:
+                    return atomicas / coin_units
+                break
+    return None
+
+
+def _fetch_alph():
+    """Alephium (Blake3) vía el pool HeroMiners que ya usamos por defecto
+    (alephium.herominers.com): dificultad de red y recompensa por bloque,
+    las dos en vivo. pool.stats.averageReward (la recompensa ya calculada
+    por el propio pool, sin parsear nada) se probó primero pero resultó
+    no ser fiable — en pruebas reales viene vacía parte del tiempo — así
+    que se usa _reward_alph_de_bloques en su lugar."""
+    datos = _http_json("https://alephium.herominers.com/api/stats")
+    dif = float(datos["network"]["difficulty"])
+    coin_units = int(datos["config"]["coinUnits"])
+    recompensa = _reward_alph_de_bloques(datos.get("pool", {}).get("blocks", []), coin_units)
+    if not dif or recompensa is None:
+        return None
+    return dif, recompensa, "alephium.herominers.com/api/stats"
+
+
 def _estimacion_por_dificultad(simbolo: str):
     """Para monedas cuya dificultad es 'hashes esperados por bloque'
-    (CryptoNote): moneda/hora = ref * recompensa * 3600 / dificultad."""
-    fetch = {"XMR": _fetch_xmr, "SAL": _fetch_sal, "ZEPH": _fetch_zeph}[simbolo]
+    (CryptoNote y, verificado, también Alephium/Blake3 — ver
+    docs/DECISIONS.md): moneda/hora = ref * recompensa * 3600 / dificultad."""
+    fetch = {"XMR": _fetch_xmr, "SAL": _fetch_sal, "ZEPH": _fetch_zeph, "ALPH": _fetch_alph}[simbolo]
     resultado = fetch()
     if resultado is None:
         return None
@@ -248,6 +311,7 @@ _ESTIMADORES = {
     "ZEPH": lambda: _estimacion_por_dificultad("ZEPH"),
     "RVN": _estimacion_rvn,
     "KAS": _estimacion_kas,
+    "ALPH": lambda: _estimacion_por_dificultad("ALPH"),
 }
 
 
@@ -269,7 +333,7 @@ def estimar_referencia(simbolo: str) -> "EstimacionReferencia | None":
 
     estimador = _ESTIMADORES.get(simbolo)
     if estimador is None:
-        return None  # moneda sin fuente verificada (WOW, RTM, ALPH)
+        return None  # moneda sin fuente verificada (WOW, RTM)
 
     try:
         resultado = estimador()

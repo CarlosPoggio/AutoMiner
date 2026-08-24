@@ -21,6 +21,7 @@ PRECIOS_COINGECKO = {
     "zephyr-protocol": {"usd": 0.40},
     "ravencoin": {"usd": 0.0033},
     "kaspa": {"usd": 0.029},
+    "alephium": {"usd": 0.0335},
 }
 
 XMR_NETWORK = {"difficulty": 724364281448, "value": 625456300000, "height": 3746443}
@@ -50,6 +51,24 @@ RVN_BLOCKS = {"matured": [{"height": 4506402, "reward": 125000000000, "orphan": 
 
 KAS_HASHRATE = {"hashrate": 319022.77}
 KAS_REWARD = {"blockreward": 2.31246515}
+
+# Captura real de alephium.herominers.com/api/stats (2026-08-24, recortada).
+# El campo antes de la dirección real (la penúltima parte) es la
+# recompensa; el campo hexadecimal lleno de ceros justo antes NO debe
+# confundirse con la dirección — es el bug real que se reprodujo y arregló.
+ALPH_STATS = {
+    "config": {"coinUnits": 1000000000000000000},
+    "network": {"difficulty": 2877482810317808},
+    "pool": {
+        "stats": {"averageReward": None},  # visto así de verdad parte del tiempo
+        "blocks": [
+            "00000000000195b5b250d576ffc7caf655fbc9b8ee6f25f38555736319d2cda4:7342453:"
+            "1787580539:2805561783436960:5760286446566350:5760286446566350:"
+            "827b000000000000000000000000000000b2df86d31fb621:4:pending:"
+            "143317807237549265:1CnmrpKQ9fm6ZEkpguiCUxTajxWastc5439qyRvqgfTkQ:na-us3:prop"
+        ],
+    },
+}
 
 
 def _resp(objeto):
@@ -85,6 +104,8 @@ def _urlopen_por_url(peticion, timeout=None, **_kwargs):
         return _resp(KAS_HASHRATE)
     if "api.kaspa.org/info/blockreward" in url:
         return _resp(KAS_REWARD)
+    if "alephium.herominers.com" in url:
+        return _resp(ALPH_STATS)
     raise AssertionError(f"URL no esperada en el test: {url}")
 
 
@@ -144,6 +165,19 @@ class TestEstimacionesConDatos(BaseEstimacion):
         self.assertAlmostEqual(r.moneda_por_hora, esperado, places=12)
 
     @patch("urllib.request.urlopen", side_effect=_urlopen_por_url)
+    def test_alph_recompensa_desde_bloque_evita_el_campo_hex(self, _mock):
+        # Reproduce el bug real: un parser genérico ("el primer token largo
+        # alfanumérico es la dirección") se confundiría con el campo
+        # hexadecimal y calcularía una recompensa completamente distinta.
+        r = est.estimar_referencia("ALPH")
+        self.assertIsNotNone(r)
+        self.assertEqual(r.hashrate_referencia, "1 GH/s")
+        recompensa = 143317807237549265 / 1e18
+        esperado = 1e9 * recompensa * 3600 / 2877482810317808
+        self.assertAlmostEqual(r.moneda_por_hora, esperado, places=12)
+        self.assertIn("herominers", r.fuente)
+
+    @patch("urllib.request.urlopen", side_effect=_urlopen_por_url)
     def test_simbolo_en_minusculas_y_espacios(self, _mock):
         r = est.estimar_referencia("  xmr ")
         self.assertIsNotNone(r)
@@ -159,10 +193,6 @@ class TestMonedasSinFuente(BaseEstimacion):
     @patch("urllib.request.urlopen", side_effect=_urlopen_por_url)
     def test_rtm_sin_fuente_da_none(self, _mock):
         self.assertIsNone(est.estimar_referencia("RTM"))
-
-    @patch("urllib.request.urlopen", side_effect=_urlopen_por_url)
-    def test_alph_sin_fuente_da_none(self, _mock):
-        self.assertIsNone(est.estimar_referencia("ALPH"))
 
     def test_none_da_none(self):
         self.assertIsNone(est.estimar_referencia(None))

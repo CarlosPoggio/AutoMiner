@@ -1104,3 +1104,97 @@ el pool real) se hicieron directamente con `minar.iniciar_minado`
 desde un script aparte (no desde `minar.py`/`formulario.py` tal cual,
 para poder controlar la duración exacta y detener el proceso yo mismo
 a los pocos segundos), nunca dejadas corriendo sin vigilancia.
+
+## 2026-08-24 (19) — ALPH ya tiene estimación de ingreso, y arreglado que el hashrate real de lolMiner no se leía
+
+Confirmaste que ya has minado ALPH de verdad con tu GPU (probé yo mismo
+lolMiner en esta misma máquina un poco antes, con una wallet de prueba,
+y detecté la GPU y arrancó CUDA sin problema — coincide con lo tuyo).
+Preguntaste tres cosas.
+
+**1) Por qué no había estimación de ingreso para ALPH.** La entrada del
+2026-08-23 que investigó esto decía que no se encontró una fuente
+fiable para la dificultad/hashrate de red de Alephium. Investigué de
+nuevo, y esta vez sí hay una: el propio pool que ya usamos por defecto
+(`alephium.herominers.com`, HeroMiners) expone `/api/stats` con
+dificultad de red en vivo, igual que ya usábamos para Salvium/Zephyr —
+antes no se había probado con ALPH en concreto. Añadido en
+`src/estimacion_ingreso.py` (`_fetch_alph`, `REFERENCIA_HASHRATE["ALPH"]`,
+id de CoinGecko "alephium" verificado con precio real y contrastado
+contra el que reporta el propio pool: coinciden).
+
+No lo di por bueno sin comprobarlo — dos cosas que fallaron a la
+primera y que arreglé antes de terminar:
+- El parser genérico que ya usábamos para bloques de HeroMiners
+  (`_reward_de_bloques_herominers`, que asume que el primer token largo
+  alfanumérico de un bloque es la dirección del minero) se confunde con
+  ALPH: sus bloques traen un campo hexadecimal extra
+  (`827b000...b621`) que "parece" una dirección para ese parser genérico
+  y da una recompensa completamente equivocada. Arreglado con un parser
+  específico (`_reward_alph_de_bloques`) que busca el campo que de
+  verdad tiene forma de dirección real de Alephium (la misma regex que
+  ya usa `minar.py` para validar la wallet — una dirección real nunca
+  contiene "0", el campo hexadecimal problemático está lleno de ceros).
+- El campo `pool.stats.averageReward`, que en teoría daba la recompensa
+  ya calculada sin tener que parsear nada, resultó no ser fiable: en
+  peticiones reales viene `null` parte del tiempo. Descartado a favor
+  del parser de bloques de arriba, que sí es consistente.
+
+Antes de dar la fórmula por buena (la misma que XMR/SAL/ZEPH:
+`moneda_por_hora = ref * recompensa * 3600 / dificultad`, que asume que
+"dificultad" son hashes esperados por bloque — una conversión "delicada"
+según el propio docstring del módulo), la contrasté contra un dato
+real independiente: los pagos diarios reales del pool
+(`pool.stats.daily_earnings`) divididos entre su hashrate combinado
+(`pool.stats.hashrate`) dan un ingreso por hash muy parecido al que
+calcula la fórmula para el hashrate real de tu GPU — se valida sola, no
+es una cifra inventada.
+
+**Resultado honesto: a tu velocidad real (1055.99 Mh/s), ALPH da
+aproximadamente 0,0057 $/hora — unos 0,00014 $/día.** Es una cifra
+real, no un fallo de cálculo (contrastada como se explica arriba): la
+red de Alephium tiene un hashrate combinado altísimo (varios PH/s) para
+un precio muy bajo, así que el reparto por hash individual es minúsculo.
+No es que "no se pueda estimar" — es que, con los datos reales de hoy,
+apenas se gana nada.
+
+**2) El log de velocidad de lolMiner no se leía para el hashrate real.**
+Bug real, mismo tipo que el de kawpowminer de la entrada 18: el formato
+que se había documentado antes ("Total: X mh/s", visto en registros
+compartidos por usuarios) resultó no coincidir con lo que lolMiner
+imprime de verdad minando ALPH con una sola GPU: `"Average speed (15s):
+1055.99 Mh/s"`, sin la palabra "Total" en ningún sitio. El patrón
+antiguo nunca coincidía con esta salida real, así que la estimación con
+tu hashrate real nunca se actualizaba (aparte de que antes ni siquiera
+había estimación de referencia con la que escalar). Arreglado en
+`src/minar.py`: se prueban los dos formatos, con preferencia por
+"Total" (el agregado, cuando hay más de una GPU y sí aparece) sobre
+"Average speed" (respaldo para una sola GPU). De paso, `interpretar_linea`
+también mostraba esta línea de forma redundante ("Velocidad: speed
+(15s): ...") porque contiene la palabra "speed" y caía en el caso
+genérico antes de llegar al específico — arreglado con el mismo cambio.
+
+**3) ¿Hay monedas de GPU más rentables que no tengamos?** Del catálogo
+completo (`src/monedas.py`, investigado el 2026-08-20), solo RVN, KAS y
+ALPH tienen motor de minado registrado hoy — el resto (Ergo, Ethereum
+Classic, Flux, Zcash, Bitcoin Gold, Beam, Firo, Conflux, Zano, Nexa,
+Radiant, Neoxa...) están en el catálogo pero sin motor implementado
+todavía, así que hoy por hoy no son opciones reales, solo candidatas
+para el futuro. De las tres implementadas: KAS ya no es minable con
+ningún hardware (entrada 17), RVN falla en las dos GPUs NVIDIA
+modernas probadas (entradas 17 y 18), y ALPH funciona pero, con datos
+reales, apenas rinde nada en esta GPU. Es coherente con la realidad más
+amplia del sector en 2026: la minería de altcoins por GPU lleva años
+cada vez más exprimida por ASICs y por el hashrate combinado de minería
+a gran escala — un portátil individual ya no es muy competitivo salvo
+en monedas muy concretas. Si Carlos quiere, el siguiente paso sería
+investigar una candidata concreta del catálogo (Ergo es la más citada
+habitualmente como viable con GPU de consumo) siguiendo el mismo
+proceso de siempre: pool, formato de comando y comisión con fuentes
+fiables antes de registrar un motor nuevo — no aplicado todavía, a la
+espera de que lo pida.
+
+Verificado: 177 tests en verde (antes 175). La estimación de ALPH y el
+arreglo de lolMiner se comprobaron contra la API real del pool y con la
+línea de log real capturada minando de verdad, no solo con datos
+simulados.

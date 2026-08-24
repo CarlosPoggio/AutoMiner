@@ -162,6 +162,12 @@ MONEDAS_GPU = {
     "ALPH": {
         "nombre": "Alephium", "algoritmo": "Blake3", "vram_min_gb": 2, "motor": "lolMiner",
         "soportado_por_minar_hoy": True, "comision_pct": 0.75, "orden_respaldo": 2,
+        # Confirmado por Carlos minando de verdad el 2026-08-24 (RTX 4060
+        # Laptop): conecta, calcula y envía comparios al pool sin problema.
+        # El ingreso real es minúsculo hoy (ver estimacion_ingreso.py y
+        # docs/DECISIONS.md) — esto solo confirma que FUNCIONA, no que
+        # compense.
+        "confirmado_en_hardware_real": True,
     },
     "ZANO": {"nombre": "Zano", "algoritmo": "ProgPowZ", "vram_min_gb": 4, "motor": "gminer", "orden_respaldo": 12},
     "NEXA": {"nombre": "Nexa", "algoritmo": "NexaPow", "vram_min_gb": 2, "motor": "bzminer", "orden_respaldo": 13},

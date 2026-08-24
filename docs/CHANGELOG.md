@@ -1,5 +1,35 @@
 # Historial de sesiones
 
+## 2026-08-24 (5) — ALPH ya tiene estimación de ingreso (con datos reales, apenas rinde), y arreglado el hashrate real de lolMiner
+
+- Carlos confirmó minado real de ALPH funcionando. Nueva fuente de datos
+  encontrada para su estimación (`alephium.herominers.com/api/stats`,
+  el mismo pool que ya usamos por defecto) — antes se daba por
+  imposible, investigado de nuevo con más cuidado.
+- Dos bugs reales encontrados y arreglados antes de dar la estimación
+  por buena: (1) el parser genérico de bloques de HeroMiners se
+  confunde con un campo hexadecimal del bloque de ALPH y calcularía mal
+  la recompensa — arreglado con un parser específico que busca el campo
+  con forma de dirección real; (2) `pool.stats.averageReward` (más
+  simple, probado primero) resultó no ser fiable, viene `null` parte
+  del tiempo.
+- La fórmula se contrastó contra los pagos diarios reales del pool
+  antes de usarla (coincide el orden de magnitud). Resultado honesto: a
+  la velocidad real de la GPU de Carlos (1055.99 Mh/s), ALPH da del
+  orden de $0,0001/día — un dato real, no un fallo, la red tiene un
+  hashrate combinado enorme para un precio muy bajo.
+- Bug real independiente encontrado de paso: el formato de velocidad de
+  lolMiner documentado antes ("Total: X mh/s") no coincide con lo que
+  imprime de verdad con una sola GPU ("Average speed (Ns): X mh/s", sin
+  "Total") — mismo tipo de problema que el de kawpowminer de la entrada
+  anterior. Arreglado en `src/minar.py`, probando los dos formatos con
+  preferencia por "Total" cuando está presente.
+- README.md actualizado (ALPH ya no aparece como "sin estimación").
+- 177 tests en verde (antes 175). `docs/DECISIONS.md` con el detalle
+  completo, incluida la respuesta a si hay monedas de GPU más rentables
+  disponibles hoy (ninguna implementada todavía; Ergo como candidata
+  más citada para investigar si se quiere seguir por ahí).
+
 ## 2026-08-24 (4) — Minado real de RVN reproducido en este ordenador: kawpowminer se cierra solo, y el registro se quedaba mudo cuando eso pasaba
 
 - A petición de Carlos, prueba de minado REAL (no simulada, con su

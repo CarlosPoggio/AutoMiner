@@ -28,4 +28,4 @@ XMR: 49d9CfsFivt9pGRV1T6XZzMtKHLnZknpZHHTwZSUK5ZRUdpJZ8xffdkSa6L3KDBVjWMasm5YZeq
 # RTM: tu_direccion_de_raptoreum_aqui
 RVN: RUryKpxJLtbMj9AYfZMBv4QMS1cFK3kNtz
 KAS: kaspa:qpdrsp4mkxvn2v3kse27d6jv7e7syghhmyrl58dp3mhjga4my0r8yna99st5q
-# ALPH: tu_direccion_de_alephium_aqui
+ALPH: 3cUriAoQzZBybHYUNmKGHJroLBYAoJUhMa3QPkXH4M49hMp6NhSEa

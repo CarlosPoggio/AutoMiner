@@ -315,6 +315,14 @@ def interpretar_linea(linea_cruda: str) -> str | None:
         return "⚠️ Comparto rechazado por el pool"
     if "new job" in l:
         return "📥 Nuevo trabajo recibido del pool"
+    # El informe de velocidad de lolMiner se comprueba antes que el genérico
+    # de abajo: su formato real ("Average speed (Ns): X mh/s", visto
+    # minando ALPH de verdad) contiene la palabra "speed", así que si no
+    # se mira primero, cae en el caso genérico y sale un texto redundante
+    # ("Velocidad: speed (15s): ...") en vez de uno limpio.
+    m_lolminer = _buscar_velocidad_lolminer(linea_cruda)
+    if m_lolminer:
+        return f"⚡ Velocidad: {m_lolminer.group(1)} {m_lolminer.group(2)}/s"
     if "speed" in l:
         idx = l.index("speed")
         resto = linea_cruda[idx:].strip()
@@ -358,13 +366,29 @@ def interpretar_linea(linea_cruda: str) -> str | None:
 # - xmrig: código fuente/ejemplos oficiales, siempre en H/s.
 # - kawpowminer: código fuente real (TelemetryType::str en libethcore/Miner.h
 #   del repo RavenCommunity/kawpowminer), sufijos "h"/"Kh"/"Mh"/"Gh".
-# - lolMiner: closed-source, formato "Total: X mh/s" confirmado por varios
-#   registros reales compartidos por usuarios (no hay código fuente público).
+# - lolMiner: closed-source. El formato documentado originalmente ("Total:
+#   X mh/s", con un desglose "Average speed (Ns): X mh/s | Y mh/s" delante
+#   cuando hay más de una GPU) venía de registros compartidos por
+#   usuarios, sin código fuente que contrastar. Minando ALPH de verdad
+#   (2026-08-24, con una sola GPU) el formato real resultó ser solo
+#   "Average speed (Ns): X mh/s", SIN ningún "Total" — el patrón original
+#   nunca llegaba a coincidir con esa salida real. Se prueban los dos,
+#   con preferencia por "Total" (el agregado de todas las GPUs) cuando
+#   está presente, y "Average speed" como respaldo cuando no lo está.
 _UNIDADES_HZ = {"h": 1.0, "kh": 1e3, "mh": 1e6, "gh": 1e9}
 
 _RE_XMRIG = re.compile(r"speed\s+10s/60s/15m\s+([\d.]+|n/a)")
 _RE_KAWPOWMINER = re.compile(r"A[\d:WRF]*\s*(?:\x1b\[[0-9;]*m)*\s*([\d.]+)\s*(?:\x1b\[[0-9;]*m)*\s*(h|Kh|Mh|Gh)\s*-")
-_RE_LOLMINER = re.compile(r"Total:?\s*([\d.]+)\s*(kh|mh|gh|h)/s", re.IGNORECASE)
+_RE_LOLMINER_TOTAL = re.compile(r"total:?\s*([\d.]+)\s*(kh|mh|gh|h)/s", re.IGNORECASE)
+_RE_LOLMINER_AVG = re.compile(r"average speed[^:]*:\s*([\d.]+)\s*(kh|mh|gh|h)/s", re.IGNORECASE)
+
+
+def _buscar_velocidad_lolminer(linea_cruda: str):
+    """Busca la velocidad en una línea de lolMiner, prefiriendo el
+    agregado "Total" (todas las GPUs) sobre el desglose "Average speed"
+    de una GPU concreta, cuando los dos están presentes en la misma
+    línea."""
+    return _RE_LOLMINER_TOTAL.search(linea_cruda) or _RE_LOLMINER_AVG.search(linea_cruda)
 
 
 def extraer_hashrate_real(linea_cruda: str, nombre_motor: str) -> tuple[float, str] | None:
@@ -390,7 +414,7 @@ def extraer_hashrate_real(linea_cruda: str, nombre_motor: str) -> tuple[float, s
         return hz, f"{valor} {m.group(2)}/s"
 
     if nombre_motor == "lolminer":
-        m = _RE_LOLMINER.search(linea_cruda)
+        m = _buscar_velocidad_lolminer(linea_cruda)
         if not m:
             return None
         valor, sufijo = m.group(1), m.group(2).lower()

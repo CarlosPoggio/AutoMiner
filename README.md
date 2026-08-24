@@ -71,9 +71,9 @@ falta, desde la página oficial del proyecto correspondiente en GitHub
    reales de dificultad de red y precio actual, pero a una velocidad de
    minado fija y redonda (no la de tu hardware exacto) — sirve para
    comparar monedas entre sí, no como una promesa exacta de lo que vas
-   a ganar. Wownero, Raptoreum y Alephium todavía no tienen esta
-   estimación (no se encontró una fuente de datos fiable y gratuita
-   para ellas); en vez de inventar un número, se muestra "Estimación no
+   a ganar. Wownero y Raptoreum todavía no tienen esta estimación (no
+   se encontró una fuente de datos fiable y gratuita para ellas); en
+   vez de inventar un número, se muestra "Estimación no
    disponible ahora mismo".
 3. Pulsa "Comenzar a minar". La app guarda `config.md`, instala el
    motor que falte si hace falta, y arranca a minar — verás un registro
@@ -95,7 +95,7 @@ para no confundir, hasta que se implementen):
 | Salvium (SAL) | CPU | XMRig | 1% (ajustable) | ✅ |
 | Raptoreum (RTM) | CPU | XMRig | 1% (ajustable) | ✅ |
 | Ravencoin (RVN) | GPU | kawpowminer | 0% | 🧪 sin confirmar (ver nota) |
-| Alephium (ALPH) | GPU | lolMiner | 0,75% | 🧪 sin confirmar |
+| Alephium (ALPH) | GPU | lolMiner | 0,75% | ✅ (ver nota) |
 
 "Sin confirmar" significa: el comando que se genera está comprobado
 (con un programa de prueba), pero ninguna se ha confirmado minando de
@@ -116,6 +116,13 @@ silencio. Ver `docs/DECISIONS.md` para el detalle.
 el algoritmo que necesitaba (la red de Kaspa está dominada por ASICs
 desde 2023-2024, ya no compensa minarla con GPU) — ver
 `docs/DECISIONS.md`.
+
+**Nota sobre Alephium (ALPH)**: confirmado minando de verdad (2026-08-24).
+La estimación de ingreso ya funciona, pero sé honesto contigo mismo con
+el número que te va a salir: la red de Alephium tiene un hashrate
+combinado altísimo para un precio muy bajo, así que con una GPU de
+consumo el ingreso real es minúsculo hoy (del orden de fracciones de
+centavo al día). Funciona, pero no esperes que compense la luz.
 
 Si quieres minar alguna otra moneda del catálogo más amplio (ver
 `src/monedas.py`), pide que se añada su motor de minado primero.
