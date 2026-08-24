@@ -178,6 +178,12 @@ MONEDAS_GPU = {
     "IRON": {
         "nombre": "Iron Fish", "algoritmo": "FishHash", "vram_min_gb": 4, "motor": "lolMiner",
         "soportado_por_minar_hoy": True, "comision_pct": 1.0, "orden_respaldo": 1,
+        # Confirmado el 2026-08-24: minado real con la wallet real de
+        # Carlos, ~157s vigilados, velocidad estable ~16-17 Mh/s y dos
+        # comparios aceptados por el pool de verdad. Ver docs/DECISIONS.md
+        # (incluye por qué el Administrador de tareas de Windows puede
+        # parecer que la GPU está a 0% aunque esté minando de verdad).
+        "confirmado_en_hardware_real": True,
     },
     "ZANO": {"nombre": "Zano", "algoritmo": "ProgPowZ", "vram_min_gb": 4, "motor": "gminer", "orden_respaldo": 12},
     "NEXA": {"nombre": "Nexa", "algoritmo": "NexaPow", "vram_min_gb": 2, "motor": "bzminer", "orden_respaldo": 13},

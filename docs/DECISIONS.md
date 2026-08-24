@@ -1307,3 +1307,60 @@ test flaky preexistente
 mismo arreglo ya aplicado antes a un test hermano: mockear
 `motores.shutil.which` para no depender de si el PATH real de la
 máquina tiene algo llamado "xmrig".
+
+## 2026-08-24 (21) — "La GPU está al 0%" — no era cierto: el Administrador de tareas de Windows mostraba el motor equivocado (y de paso, IRON queda confirmado)
+
+Carlos lanzó minado real (XMR por CPU + IRON por GPU) y vio la GPU dar
+un pico puntual y quedarse en 0% — con los logs diciendo que todo iba
+bien. Pidió investigar el minado en marcha, y como el proceso real
+seguía corriendo en su equipo, lo investigué en vivo, en dos fases.
+
+**Primera comprobación, con el proceso de Carlos ya en marcha**: usé el
+contador de Windows que atribuye uso de GPU por proceso
+(`Get-Counter '\GPU Engine(*)\Utilization Percentage'`, filtrado por el
+PID de lolMiner) y daba 0% también ahí, con los 21 hilos del proceso en
+estado "Wait". Con esa evidencia dije que lolMiner parecía realmente
+parado — **resultó ser una conclusión equivocada, corregida en la
+segunda fase de abajo**, documentado aquí en vez de callado.
+
+**Segunda fase, con permiso explícito de Carlos** ("lanza tú el
+proceso"): arranqué yo mismo un minado real de IRON, con su wallet real
+(ya en `wallets.md`), vigilando el mismo contador de GPU por proceso
+cada ~4 segundos durante 157 segundos seguidos, en paralelo al log real
+del propio lolMiner. Resultado, inequívoco:
+
+- lolMiner reportó una velocidad real y estable de **16-17 Mh/s**
+  durante casi todo el tiempo.
+- **Dos comparios aceptados de verdad por el pool** ("Share accepted").
+- El contador de Windows por proceso siguió dando **0% en las 34
+  muestras**, sin ni una sola excepción, durante los mismos 157
+  segundos en los que lolMiner estaba demostrablemente calculando y
+  enviando trabajo válido al pool.
+
+Conclusión: **lolMiner SÍ está minando correctamente. El problema es de
+medición, no de minado.** Contrastado con fuentes: es un problema
+conocido y bien documentado de Windows — tanto el Administrador de
+tareas como (en este caso) el contador `GPU Engine` que usé miden por
+defecto el motor **"3D"** de la tarjeta, que un programa de cálculo por
+GPU (CUDA, como lolMiner) nunca usa. El motor que sí usan estos
+programas se llama **"Cuda"** (o "Compute"), y no se muestra por
+defecto — hay que cambiarlo a mano en cada gráfica del Administrador de
+tareas (clic en la flecha desplegable de una de las cuatro gráficas de
+GPU → elegir "Cuda" en vez de "3D"/"Copia"/etc.). El pico inicial que
+vio Carlos coincide con esta explicación: es probable que fuera
+actividad real del motor 3D durante la inicialización del contexto de
+CUDA (que sí lo toca brevemente), y que después el trabajo real pasó
+al motor "Cuda" que ni el Administrador de tareas ni mi propio contador
+(sin filtrar por tipo de motor) estaban mostrando.
+
+Con esto, **Iron Fish (IRON) queda confirmado en hardware real** —
+`monedas.py` actualizado (`confirmado_en_hardware_real: True`), pasa a
+mostrarse con ✅ en vez de 🧪. Ergo y Beam siguen sin confirmar (no se
+han probado con wallet real todavía).
+
+Lección para la próxima vez que algo "parezca" no funcionar mirando el
+Administrador de tareas o un contador de rendimiento de Windows con
+minado por GPU: comprobar primero el propio registro del motor de
+minado (comparios aceptados, velocidad reportada) antes de fiarse de
+una gráfica de uso — con CUDA, esa gráfica casi siempre está mirando
+el motor equivocado por defecto.

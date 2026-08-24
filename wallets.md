@@ -30,6 +30,6 @@ XMR: 49d9CfsFivt9pGRV1T6XZzMtKHLnZknpZHHTwZSUK5ZRUdpJZ8xffdkSa6L3KDBVjWMasm5YZeq
 RVN: RUryKpxJLtbMj9AYfZMBv4QMS1cFK3kNtz
 KAS: kaspa:qpdrsp4mkxvn2v3kse27d6jv7e7syghhmyrl58dp3mhjga4my0r8yna99st5q
 ALPH: 3cUriAoQzZBybHYUNmKGHJroLBYAoJUhMa3QPkXH4M49hMp6NhSEa
-# IRON: tu_direccion_de_iron_fish_aqui
+IRON: b8a98c7eb527301c7fd0f8072e1fef8100e1097a5de05e228251b59a466cba67
 # ERG: tu_direccion_de_ergo_aqui
 # BEAM: tu_direccion_de_beam_aqui

@@ -96,7 +96,7 @@ para no confundir, hasta que se implementen):
 | Raptoreum (RTM) | CPU | XMRig | 1% (ajustable) | ✅ |
 | Ravencoin (RVN) | GPU | kawpowminer | 0% | 🧪 sin confirmar (ver nota) |
 | Alephium (ALPH) | GPU | lolMiner | 0,75% | ✅ (ver nota) |
-| Iron Fish (IRON) | GPU | lolMiner | 1% | 🧪 sin confirmar |
+| Iron Fish (IRON) | GPU | lolMiner | 1% | ✅ |
 | Ergo (ERG) | GPU | lolMiner | 1,5% | 🧪 sin confirmar |
 | Beam (BEAM) | GPU | lolMiner | 1% | 🧪 sin confirmar |
 
@@ -110,11 +110,23 @@ ingresos reales que RVN/KAS/ALPH (ver `docs/DECISIONS.md` para la
 comparación completa, con datos en vivo de whattomine.com). Las tres
 usan lolMiner —el mismo motor que ya funciona con ALPH en esta GPU—, así
 que no deberían tener el problema de kawpowminer con GPUs NVIDIA
-recientes; probadas brevemente en esta máquina (sin wallet real todavía,
-solo para comprobar que el motor arranca): las tres detectan la GPU y
+recientes. **Iron Fish ya está confirmada** con un minado real (velocidad
+estable ~16-17 Mh/s, comparios aceptados de verdad); Ergo y Beam,
+probadas brevemente (sin wallet real todavía), detectan la GPU y
 calculan sin fallar. Igual que con Ravencoin/Alephium, la clasificación
 ✅/🧪 no dice nada sobre si compensa económicamente — mira siempre la
 estimación de ingreso de la propia app antes de decidir.
+
+**Si el Administrador de tareas de Windows te dice que la GPU está al
+0% mientras minas**: probablemente no es cierto. Por defecto, el
+Administrador de tareas (y varios contadores de rendimiento de Windows)
+muestran el uso del motor **"3D"** de la tarjeta, que los programas de
+cálculo por GPU (CUDA, como lolMiner) no usan — así que pueden marcar
+0% aunque la GPU esté al 100% de verdad. Para verlo bien: en la pestaña
+Rendimiento → GPU, haz clic en la flecha de cualquiera de las cuatro
+gráficas y cambia "3D" por **"Cuda"**. La forma fiable de saber si está
+minando de verdad es mirar el propio registro de la app (velocidad
+reportada, "comparte aceptado"), no un medidor de uso genérico.
 
 **Nota sobre Ravencoin (RVN) en GPUs NVIDIA**: probado de verdad en dos
 tarjetas distintas (2026-08-24) y en ninguna de las dos consigue minar

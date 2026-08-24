@@ -1,5 +1,24 @@
 # Historial de sesiones
 
+## 2026-08-24 (7) — "GPU al 0%" no era cierto: el Administrador de tareas mira el motor equivocado; IRON confirmado en hardware real
+
+- Carlos vio la GPU caer a 0% mientras minaba IRON de verdad y pidió
+  investigar el proceso en marcha. Primera comprobación (contador de
+  Windows por proceso) sugería que sí estaba parado — conclusión
+  incorrecta, corregida en la segunda fase.
+- Con permiso explícito, arranqué yo mismo un minado real de IRON con
+  la wallet real de Carlos, vigilando GPU cada ~4s durante 157s: lolMiner
+  reportó 16-17 Mh/s estables y dos comparios aceptados de verdad,
+  mientras el mismo contador de Windows seguía marcando 0% sin
+  excepción. El motor de minado SÍ funciona; el problema es que tanto
+  el Administrador de tareas como ese contador miran por defecto el
+  motor "3D" de la GPU, que CUDA nunca usa — hay que cambiarlo a mano a
+  "Cuda"/"Compute".
+- `monedas.py`: **IRON marcada como confirmada en hardware real**
+  (pasa a ✅). Ergo y Beam siguen sin confirmar.
+- `docs/DECISIONS.md` con el detalle completo de la investigación y la
+  corrección de mi propia conclusión inicial equivocada.
+
 ## 2026-08-24 (6) — Añadidas Iron Fish, Ergo y Beam: las monedas de GPU con mejores ingresos reales
 
 - Investigación con datos en vivo (`whattomine.com/coins.json`, un

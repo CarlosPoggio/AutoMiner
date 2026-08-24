@@ -49,14 +49,18 @@ class TestCatalogoMonedas(unittest.TestCase):
         for simbolo in ("RVN", "ALPH", "IRON", "ERG", "BEAM"):
             self.assertIn("comision_pct", monedas.MONEDAS_GPU[simbolo], msg=simbolo)
 
-    def test_alph_confirmada_en_hardware_real_rvn_todavia_no(self):
-        # ALPH: Carlos confirmó minado real el 2026-08-24 (ver
-        # docs/DECISIONS.md). RVN sigue sin confirmarse de verdad (falla
-        # en las dos GPUs NVIDIA modernas probadas hasta hoy).
-        opciones = recomendador.construir_opciones(["ALPH", "RVN"])
+    def test_alph_e_iron_confirmadas_en_hardware_real_rvn_ergo_beam_todavia_no(self):
+        # ALPH e IRON: minado real confirmado el 2026-08-24 (ver
+        # docs/DECISIONS.md). RVN no funciona en las dos GPUs NVIDIA
+        # modernas probadas; ERG/BEAM solo probadas técnicamente, sin
+        # wallet real todavía.
+        opciones = recomendador.construir_opciones(["ALPH", "RVN", "IRON", "ERG", "BEAM"])
         por_simbolo = {o.simbolo: o for o in opciones}
         self.assertTrue(por_simbolo["ALPH"].confirmado_en_hardware_real)
+        self.assertTrue(por_simbolo["IRON"].confirmado_en_hardware_real)
         self.assertFalse(por_simbolo["RVN"].confirmado_en_hardware_real)
+        self.assertFalse(por_simbolo["ERG"].confirmado_en_hardware_real)
+        self.assertFalse(por_simbolo["BEAM"].confirmado_en_hardware_real)
 
 
 class TestRecomendador(unittest.TestCase):

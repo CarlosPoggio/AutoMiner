@@ -97,11 +97,13 @@ detalle completo):
 - **IRON, ERG, BEAM**: añadidas el 2026-08-24 buscando mejores ingresos
   reales (comparación con datos en vivo de whattomine.com en
   docs/DECISIONS.md). Usan lolMiner, el mismo motor ya confirmado con
-  ALPH en esta GPU — probadas brevemente (sin wallet real, solo para
-  comprobar que arrancan) y las tres calculan sin fallar, pero
-  **todavía sin confirmar con una wallet real de principio a fin** —
-  en cuanto se confirme alguna, actualizar `confirmado_en_hardware_real`
-  en `monedas.py`.
+  ALPH en esta GPU. **IRON ya está confirmada** (minado real con wallet
+  real, ~16-17 Mh/s estables, comparios aceptados — mismo episodio en
+  el que se descubrió que el Administrador de tareas de Windows mira
+  por defecto el motor "3D" de la GPU, que CUDA no usa, así que puede
+  parecer que no está minando aunque sí lo esté). ERG y BEAM, probadas
+  solo técnicamente (sin wallet real todavía) — en cuanto se confirmen,
+  actualizar `confirmado_en_hardware_real` en `monedas.py`.
 
 Añadir una moneda nueva que ya use un motor existente (mismo xmrig,
 kawpowminer o lolMiner) es sencillo; añadir una que necesite un motor
