@@ -15,9 +15,10 @@ frase semilla** — eso sí debe permanecer secreto, y no tiene nada que
 ver con la dirección de recibir.
 
 Monedas soportadas hoy (ver README.md para la lista completa):
-XMR, WOW, ZEPH, SAL, RTM (CPU) y RVN, ALPH (GPU). KAS ya no se puede
-minar con GPU (lolMiner retiró su algoritmo, ver docs/DECISIONS.md), así
-que aunque dejes una wallet suya abajo, no aparecerá en el formulario.
+XMR, WOW, ZEPH, SAL, RTM (CPU) y RVN, ALPH, IRON, ERG, BEAM (GPU). KAS
+ya no se puede minar con GPU (lolMiner retiró su algoritmo, ver
+docs/DECISIONS.md), así que aunque dejes una wallet suya abajo, no
+aparecerá en el formulario.
 
 Ejemplo (borra el # para activar la línea y pon tu dirección real):
 
@@ -29,3 +30,6 @@ XMR: 49d9CfsFivt9pGRV1T6XZzMtKHLnZknpZHHTwZSUK5ZRUdpJZ8xffdkSa6L3KDBVjWMasm5YZeq
 RVN: RUryKpxJLtbMj9AYfZMBv4QMS1cFK3kNtz
 KAS: kaspa:qpdrsp4mkxvn2v3kse27d6jv7e7syghhmyrl58dp3mhjga4my0r8yna99st5q
 ALPH: 3cUriAoQzZBybHYUNmKGHJroLBYAoJUhMa3QPkXH4M49hMp6NhSEa
+# IRON: tu_direccion_de_iron_fish_aqui
+# ERG: tu_direccion_de_ergo_aqui
+# BEAM: tu_direccion_de_beam_aqui

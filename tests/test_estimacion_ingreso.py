@@ -22,6 +22,9 @@ PRECIOS_COINGECKO = {
     "ravencoin": {"usd": 0.0033},
     "kaspa": {"usd": 0.029},
     "alephium": {"usd": 0.0335},
+    "iron-fish": {"usd": 0.076174},
+    "ergo": {"usd": 0.261442},
+    "beam-2": {"usd": 0.00149559},
 }
 
 XMR_NETWORK = {"difficulty": 724364281448, "value": 625456300000, "height": 3746443}
@@ -70,6 +73,41 @@ ALPH_STATS = {
     },
 }
 
+# Capturas reales de HeroMiners para IRON/ERG/BEAM (2026-08-24, recortadas).
+# A diferencia de ALPH, estos bloques SÍ funcionan con el parser genérico:
+# no traen ningún campo extra que se confunda con la dirección del minero.
+IRON_STATS = {
+    "config": {"coinUnits": 100000000},
+    "network": {"difficulty": 19794429814229},
+    "pool": {"blocks": [
+        "00000000000792c834bd4a3165ad57f99b1d1f4c0e38432ed945fc6f6fc429b1:1787577591:"
+        "19685201431534:18645543414849:18618736654028:00cc317d742e7292:pending:"
+        "1725000000:4f332240eb11954a94a57c67ef9e9f9d1a922de0bb82f50986e624b327d60da5:"
+        "na-us2:prop"
+    ]},
+}
+
+ERG_STATS = {
+    "config": {"coinUnits": 1000000000},
+    "network": {"difficulty": 75748543037440},
+    "pool": {"blocks": [
+        "4788f5bd18a30289b79ec2f865fdadd0e70a28214c573b326adca6fa107b338a:1787572756:"
+        "75748543037439:11078579802013:11072298016748:bd2b67db440ca00a:pending:"
+        "3007800000:9huiUrcSSr8N7hwwzD65N5nu13F3BdvZfoEiPKMhHHNCdUG5mL5:na-us2:prop:"
+        "02eeec374f4e660e117fccbfec79e6fe5cdf44ac508fa228bfc654d2973f9bdc9a"
+    ]},
+}
+
+BEAM_STATS = {
+    "config": {"coinUnits": 100000000},
+    "network": {"difficulty": 3236492.75},
+    "pool": {"blocks": [
+        "8d8c414c9ba2a569bc0e6ee2949844fb265b4e43c9d1c5a517a0cbb6825e8a81:1787567965:"
+        "3202597.25:3137936:3122725:pending:2500000000:"
+        "37f3131007a84edbb7fa737881209ee8176b830d238aa2d47954b628e0f9772baeb:eu-de:prop"
+    ]},
+}
+
 
 def _resp(objeto):
     """Un urlopen falso: un context manager que devuelve JSON al leerlo."""
@@ -104,6 +142,12 @@ def _urlopen_por_url(peticion, timeout=None, **_kwargs):
         return _resp(KAS_HASHRATE)
     if "api.kaspa.org/info/blockreward" in url:
         return _resp(KAS_REWARD)
+    if "ironfish.herominers.com" in url:
+        return _resp(IRON_STATS)
+    if "ergo.herominers.com" in url:
+        return _resp(ERG_STATS)
+    if "beam.herominers.com" in url:
+        return _resp(BEAM_STATS)
     if "alephium.herominers.com" in url:
         return _resp(ALPH_STATS)
     raise AssertionError(f"URL no esperada en el test: {url}")
@@ -176,6 +220,32 @@ class TestEstimacionesConDatos(BaseEstimacion):
         esperado = 1e9 * recompensa * 3600 / 2877482810317808
         self.assertAlmostEqual(r.moneda_por_hora, esperado, places=12)
         self.assertIn("herominers", r.fuente)
+
+    @patch("urllib.request.urlopen", side_effect=_urlopen_por_url)
+    def test_iron_recompensa_desde_bloque(self, _mock):
+        r = est.estimar_referencia("IRON")
+        self.assertIsNotNone(r)
+        recompensa = 1725000000 / 1e8
+        esperado = 1e7 * recompensa * 3600 / 19794429814229
+        self.assertAlmostEqual(r.moneda_por_hora, esperado, places=10)
+        self.assertIn("herominers", r.fuente)
+
+    @patch("urllib.request.urlopen", side_effect=_urlopen_por_url)
+    def test_erg_recompensa_desde_bloque(self, _mock):
+        r = est.estimar_referencia("ERG")
+        self.assertIsNotNone(r)
+        recompensa = 3007800000 / 1e9
+        esperado = 1e8 * recompensa * 3600 / 75748543037440
+        self.assertAlmostEqual(r.moneda_por_hora, esperado, places=8)
+
+    @patch("urllib.request.urlopen", side_effect=_urlopen_por_url)
+    def test_beam_recompensa_desde_bloque(self, _mock):
+        r = est.estimar_referencia("BEAM")
+        self.assertIsNotNone(r)
+        self.assertEqual(r.hashrate_referencia, "30 Sol/s")
+        recompensa = 2500000000 / 1e8
+        esperado = 30.0 * recompensa * 3600 / 3236492.75
+        self.assertAlmostEqual(r.moneda_por_hora, esperado, places=6)
 
     @patch("urllib.request.urlopen", side_effect=_urlopen_por_url)
     def test_simbolo_en_minusculas_y_espacios(self, _mock):

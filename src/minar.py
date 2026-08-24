@@ -95,6 +95,34 @@ MONEDAS_SOPORTADAS = {
         "wallet_regex": r"^[1-9A-HJ-NP-Za-km-z]{44,58}$",
         "gpu": True,
     },
+    "IRON": {
+        "nombre": "Iron Fish",
+        "algo": "FISHHASH",
+        "motor": "lolminer",
+        "pool_por_defecto": "de.ironfish.herominers.com:1145",
+        # Dirección pública de Iron Fish: 64 caracteres hexadecimales.
+        "wallet_regex": r"^[0-9a-f]{64}$",
+        "gpu": True,
+    },
+    "ERG": {
+        "nombre": "Ergo",
+        "algo": "AUTOLYKOS2",
+        "motor": "lolminer",
+        "pool_por_defecto": "de.ergo.herominers.com:1180",
+        # Dirección P2PK de Ergo: base58, siempre empieza por "9".
+        "wallet_regex": r"^9[1-9A-HJ-NP-Za-km-z]{50,51}$",
+        "gpu": True,
+    },
+    "BEAM": {
+        "nombre": "Beam",
+        "algo": "BEAM-III",
+        "motor": "lolminer",
+        "pool_por_defecto": "de.beam.herominers.com:1130",
+        # Dirección de Beam: hexadecimal, la longitud varía según el tipo
+        # (transparente/SBBS) — se acepta un rango en vez de un número fijo.
+        "wallet_regex": r"^[0-9a-f]{64,70}$",
+        "gpu": True,
+    },
 }
 
 
@@ -375,12 +403,20 @@ def interpretar_linea(linea_cruda: str) -> str | None:
 #   nunca llegaba a coincidir con esa salida real. Se prueban los dos,
 #   con preferencia por "Total" (el agregado de todas las GPUs) cuando
 #   está presente, y "Average speed" como respaldo cuando no lo está.
-_UNIDADES_HZ = {"h": 1.0, "kh": 1e3, "mh": 1e6, "gh": 1e9}
+#   Los algoritmos de la familia Equihash (Beam incluido) no miden en
+#   hashes por segundo sino en "soluciones" ("Sol/s"): visto de verdad
+#   minando BEAM (2026-08-24), así que se trata como una familia de
+#   unidad aparte, con los mismos prefijos k/m/g.
+_UNIDADES_HZ = {
+    "h": 1.0, "kh": 1e3, "mh": 1e6, "gh": 1e9,
+    "sol": 1.0, "ksol": 1e3, "msol": 1e6, "gsol": 1e9,
+}
+_SUFIJOS_LOLMINER = r"(kh|mh|gh|h|ksol|msol|gsol|sol)"
 
 _RE_XMRIG = re.compile(r"speed\s+10s/60s/15m\s+([\d.]+|n/a)")
 _RE_KAWPOWMINER = re.compile(r"A[\d:WRF]*\s*(?:\x1b\[[0-9;]*m)*\s*([\d.]+)\s*(?:\x1b\[[0-9;]*m)*\s*(h|Kh|Mh|Gh)\s*-")
-_RE_LOLMINER_TOTAL = re.compile(r"total:?\s*([\d.]+)\s*(kh|mh|gh|h)/s", re.IGNORECASE)
-_RE_LOLMINER_AVG = re.compile(r"average speed[^:]*:\s*([\d.]+)\s*(kh|mh|gh|h)/s", re.IGNORECASE)
+_RE_LOLMINER_TOTAL = re.compile(rf"total:?\s*([\d.]+)\s*{_SUFIJOS_LOLMINER}/s", re.IGNORECASE)
+_RE_LOLMINER_AVG = re.compile(rf"average speed[^:]*:\s*([\d.]+)\s*{_SUFIJOS_LOLMINER}/s", re.IGNORECASE)
 
 
 def _buscar_velocidad_lolminer(linea_cruda: str):

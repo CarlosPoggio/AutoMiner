@@ -1198,3 +1198,112 @@ Verificado: 177 tests en verde (antes 175). La estimación de ALPH y el
 arreglo de lolMiner se comprobaron contra la API real del pool y con la
 línea de log real capturada minando de verdad, no solo con datos
 simulados.
+
+## 2026-08-24 (20) — Investigadas y añadidas las monedas de GPU con mejor ingreso real: Iron Fish, Ergo y Beam
+
+Pediste implementar las monedas de GPU con mejores ingresos, sin mirar
+coste ni consumo. En vez de adivinar o reutilizar el ranking de
+2026-08-20 (`orden_respaldo` en `monedas.py`, que ya sabíamos poco
+fiable: KAS resultó no minable y ALPH apenas rinde), investigué con
+datos en vivo antes de decidir nada.
+
+**Fuente de ranking real**: `whattomine.com/coins.json` (la misma web
+que se intentó usar al principio del proyecto, que entonces no cubría
+ninguna de nuestras monedas) SÍ tiene hoy un índice de "profitability"
+en vivo para 43 monedas, muchas de ellas minables por GPU. Descargado y
+ordenado de mayor a menor. Antes de elegir candidatas, descarté las que
+no tenían sentido real: monedas extremadamente pequeñas/con algoritmo
+propio raro (Pearl, EPIC-ProgPow — máxima puntuación pero muy
+arriesgadas, sin motor de minado mainstream claro), entradas "Nicehash-*"
+(no son monedas, es un mercado), y cualquiera cuyo algoritmo fuera
+KawPow (Evrmore, Neoxa, Frencoin, Neurai...) — **descartadas a
+propósito**, porque ya sabemos que kawpowminer falla en las dos GPUs
+NVIDIA modernas que hemos probado (entradas 17-18): añadir más monedas
+con el mismo motor roto no soluciona nada.
+
+De las candidatas que quedaron con puntuación alta y algoritmo
+"normal", el criterio decisivo fue: **¿la soporta lolMiner?** — el
+motor que ya confirmamos funcionando sin fallos en esta GPU con ALPH
+(entrada 19), evitando por completo el riesgo de repetir el problema de
+kawpowminer. Comprobé el listado exacto de algoritmos ejecutando
+`lolMiner.exe --list-algos` en esta máquina (fuente 100% verificada, no
+un README):
+
+```
+KARLSENV2   Karlsenhash V2   1.0
+FISHHASH    FishHash         1.0
+AUTOLYKOS2  Autolykos V2     1.5
+BEAM-III    BeamHash III     1.0
+```
+
+**Karlsen (KLS)**, con la puntuación más alta de las candidatas serias
+(1142, justo detrás de Pearl/EPIC), quedó descartada por ahora: no
+encontré ningún pool que responda de verdad (`karlsen.herominers.com`,
+`kls.2miners.com`, `woolypooly`... ninguno resuelve o responde), aunque
+el algoritmo sí está soportado por lolMiner. Sin un pool real no hay
+forma de minarla, así que no se implementó — queda como candidata para
+retomar si aparece un pool en marcha.
+
+Las tres que sí tienen pool real (HeroMiners, el mismo proveedor que ya
+usamos para SAL/ZEPH/ALPH) y algoritmo soportado por lolMiner:
+
+- **Iron Fish (IRON)**, FishHash — puntuación whattomine 699.
+- **Beam (BEAM)**, BeamHash III — puntuación 511.
+- **Ergo (ERG)**, Autolykos V2 — puntuación 451.
+
+Las tres muy por encima de RVN (618, pero no funciona) y de ALPH (que
+ni siquiera aparece en el ranking de whattomine — coherente con lo
+minúsculo de su ingreso real, entrada 19).
+
+**Verificado antes de implementar, no dado por hecho:**
+- Los tres pools (`ironfish.herominers.com`, `ergo.herominers.com`,
+  `beam.herominers.com`) responden de verdad y dan dificultad de red en
+  vivo.
+- Los tres precios existen en CoinGecko con datos reales ("iron-fish",
+  "ergo", "beam-2").
+- El formato de bloque de los tres SÍ funciona con el parser genérico
+  ya existente (`_reward_de_bloques_herominers`) — revisado campo a
+  campo para los tres, ninguno tiene el problema del campo hexadecimal
+  que sí tenía ALPH (entrada 19).
+- **Prueba real breve en esta GPU** (RTX 4060 Laptop), con direcciones
+  de prueba (no wallets reales, solo para comprobar que el motor
+  arranca — igual que se hizo antes con ALPH): las tres detectan la
+  GPU, seleccionan el algoritmo correcto y calculan sin ningún fallo de
+  CUDA. ERG fue rechazada por el pool por la dirección falsa (esperado,
+  y confirma que el aviso de "el programa se cerró solo" de la entrada
+  18 funciona también aquí). IRON y BEAM llegaron a reportar velocidad
+  real (aunque en 0, por no tener wallet real todavía).
+
+**Bug real encontrado de paso, mismo tipo que el de la entrada 19**:
+BeamHash (familia Equihash) no mide en H/s sino en "soluciones por
+segundo" (`Sol/s`) — visto en la prueba real de BEAM
+(`"Average speed (15s): 0.0 sol/s"`). El patrón de `minar.py` para
+lolMiner solo reconocía sufijos `kh/mh/gh/h`, así que ni se traducía en
+el registro sencillo ni se podía escalar el ingreso con la velocidad
+real. Arreglado añadiendo la familia de unidades `sol/ksol/msol/gsol`
+junto a las de H/s.
+
+Implementado en el mismo patrón que las monedas existentes:
+`src/minar.py` (`MONEDAS_SOPORTADAS`), `src/monedas.py`
+(`MONEDAS_GPU`), `src/estimacion_ingreso.py` (reutilizando
+`_fetch_cryptonote_herominers`, sin necesitar un parser especial como
+ALPH). Reordené también el `orden_respaldo` de KAS/RVN/ALPH y de estas
+tres nuevas para que refleje el ranking real de whattomine en vez del
+ranking a ciegas de 2026-08-20 (ETC y CFX, que no están implementadas,
+se movieron a números libres para no chocar).
+
+**Importante — ninguna de las tres está "confirmada en hardware real"
+todavía**: la prueba fue solo técnica (arranca, calcula, no revienta),
+no un minado real de principio a fin con una wallet de verdad y comparios
+aceptados por el pool, así que en `monedas.py` NO se marcó
+`confirmado_en_hardware_real` para ninguna de las tres (a diferencia de
+ALPH, que sí se confirmó de verdad) — se marcarán en cuanto Carlos
+confirme un minado real, siguiendo la misma convención que ya existía.
+
+Verificado: 185 tests en verde (antes 177). De paso, endurecido otro
+test flaky preexistente
+(`test_autosana_ficheros_acompanantes_de_una_instalacion_previa` en
+`test_instalador.py`, visto fallar una vez durante esta sesión) con el
+mismo arreglo ya aplicado antes a un test hermano: mockear
+`motores.shutil.which` para no depender de si el PATH real de la
+máquina tiene algo llamado "xmrig".

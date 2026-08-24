@@ -96,11 +96,25 @@ para no confundir, hasta que se implementen):
 | Raptoreum (RTM) | CPU | XMRig | 1% (ajustable) | ✅ |
 | Ravencoin (RVN) | GPU | kawpowminer | 0% | 🧪 sin confirmar (ver nota) |
 | Alephium (ALPH) | GPU | lolMiner | 0,75% | ✅ (ver nota) |
+| Iron Fish (IRON) | GPU | lolMiner | 1% | 🧪 sin confirmar |
+| Ergo (ERG) | GPU | lolMiner | 1,5% | 🧪 sin confirmar |
+| Beam (BEAM) | GPU | lolMiner | 1% | 🧪 sin confirmar |
 
 "Sin confirmar" significa: el comando que se genera está comprobado
 (con un programa de prueba), pero ninguna se ha confirmado minando de
 verdad de principio a fin contra un pool real todavía. Pruébalo en tu
 ordenador y cuenta qué tal ha ido.
+
+**Iron Fish, Ergo y Beam se añadieron el 2026-08-24** buscando mejores
+ingresos reales que RVN/KAS/ALPH (ver `docs/DECISIONS.md` para la
+comparación completa, con datos en vivo de whattomine.com). Las tres
+usan lolMiner —el mismo motor que ya funciona con ALPH en esta GPU—, así
+que no deberían tener el problema de kawpowminer con GPUs NVIDIA
+recientes; probadas brevemente en esta máquina (sin wallet real todavía,
+solo para comprobar que el motor arranca): las tres detectan la GPU y
+calculan sin fallar. Igual que con Ravencoin/Alephium, la clasificación
+✅/🧪 no dice nada sobre si compensa económicamente — mira siempre la
+estimación de ingreso de la propia app antes de decidir.
 
 **Nota sobre Ravencoin (RVN) en GPUs NVIDIA**: probado de verdad en dos
 tarjetas distintas (2026-08-24) y en ninguna de las dos consigue minar

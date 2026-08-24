@@ -48,6 +48,16 @@ pool.stats.averageReward, que en teoría daría la recompensa ya calculada
 sin parsear nada, se descartó por no ser fiable: en pruebas reales viene
 vacío (null) parte del tiempo.
 
+IRON (Iron Fish), ERG (Ergo) y BEAM (Beam) tienen estimación desde el
+2026-08-24: las tres se investigaron como candidatas de mejor ingreso
+real que RVN/KAS/ALPH (ver docs/DECISIONS.md), y las tres tienen pool
+HeroMiners con dificultad de red en vivo y precio verificado en
+CoinGecko ("iron-fish", "ergo", "beam-2"). A diferencia de ALPH, sus
+bloques SÍ se pueden parsear con el ayudante genérico
+(_reward_de_bloques_herominers): no traen ningún campo extra que se
+confunda con la dirección del minero (comprobado bloque a bloque antes
+de usarlo, no asumido).
+
 Todo usa solo la librería estándar (urllib, json, re), sin dependencias.
 """
 
@@ -73,6 +83,9 @@ REFERENCIA_HASHRATE = {
     "RVN": (1e7, "10 MH/s"),     # KawPow
     "KAS": (1e9, "1 GH/s"),      # kHeavyHash
     "ALPH": (1e9, "1 GH/s"),     # Blake3 — orden de magnitud real, visto en GPU
+    "IRON": (1e7, "10 MH/s"),    # FishHash — parecido en orden de magnitud a KawPow
+    "ERG": (1e8, "100 MH/s"),    # Autolykos2 — algoritmo rápido, orden de magnitud mayor
+    "BEAM": (30.0, "30 Sol/s"),  # BeamHash III (familia Equihash) — se mide en soluciones/s, no en H/s
 }
 
 # ids de CoinGecko (verificados en vivo). Solo los de monedas que sí
@@ -84,6 +97,9 @@ COINGECKO_IDS = {
     "RVN": "ravencoin",
     "KAS": "kaspa",
     "ALPH": "alephium",
+    "IRON": "iron-fish",
+    "ERG": "ergo",
+    "BEAM": "beam-2",
 }
 URL_COINGECKO = "https://api.coingecko.com/api/v3/simple/price"
 
@@ -248,11 +264,36 @@ def _fetch_alph():
     return dif, recompensa, "alephium.herominers.com/api/stats"
 
 
+def _fetch_iron():
+    """Iron Fish (FishHash) vía el pool HeroMiners que ya usamos por
+    defecto. Bloque verificado a mano antes de usar el parser genérico:
+    no trae ningún campo extra que se confunda con la dirección (a
+    diferencia de ALPH) — ver docs/DECISIONS.md."""
+    return _fetch_cryptonote_herominers("ironfish.herominers.com")
+
+
+def _fetch_erg():
+    """Ergo (Autolykos2) vía el pool HeroMiners que ya usamos por
+    defecto. Mismo motivo que Iron Fish: bloque verificado, el parser
+    genérico funciona bien aquí."""
+    return _fetch_cryptonote_herominers("ergo.herominers.com")
+
+
+def _fetch_beam():
+    """Beam (BeamHash III) vía el pool HeroMiners que ya usamos por
+    defecto. Mismo motivo que Iron Fish/Ergo."""
+    return _fetch_cryptonote_herominers("beam.herominers.com")
+
+
 def _estimacion_por_dificultad(simbolo: str):
     """Para monedas cuya dificultad es 'hashes esperados por bloque'
-    (CryptoNote y, verificado, también Alephium/Blake3 — ver
-    docs/DECISIONS.md): moneda/hora = ref * recompensa * 3600 / dificultad."""
-    fetch = {"XMR": _fetch_xmr, "SAL": _fetch_sal, "ZEPH": _fetch_zeph, "ALPH": _fetch_alph}[simbolo]
+    (CryptoNote y, verificado, también Alephium/Blake3, Iron Fish/FishHash,
+    Ergo/Autolykos2 y Beam/BeamHash III — ver docs/DECISIONS.md):
+    moneda/hora = ref * recompensa * 3600 / dificultad."""
+    fetch = {
+        "XMR": _fetch_xmr, "SAL": _fetch_sal, "ZEPH": _fetch_zeph, "ALPH": _fetch_alph,
+        "IRON": _fetch_iron, "ERG": _fetch_erg, "BEAM": _fetch_beam,
+    }[simbolo]
     resultado = fetch()
     if resultado is None:
         return None
@@ -312,6 +353,9 @@ _ESTIMADORES = {
     "RVN": _estimacion_rvn,
     "KAS": _estimacion_kas,
     "ALPH": lambda: _estimacion_por_dificultad("ALPH"),
+    "IRON": lambda: _estimacion_por_dificultad("IRON"),
+    "ERG": lambda: _estimacion_por_dificultad("ERG"),
+    "BEAM": lambda: _estimacion_por_dificultad("BEAM"),
 }
 
 

@@ -129,7 +129,7 @@ MONEDAS_CPU = {
 MONEDAS_GPU = {
     "KAS": {
         "nombre": "Kaspa", "algoritmo": "kHeavyHash", "vram_min_gb": 2, "motor": "lolMiner",
-        "soportado_por_minar_hoy": False, "orden_respaldo": 1,
+        "soportado_por_minar_hoy": False, "orden_respaldo": 6,
         "riesgo": (
             "Ya no se puede minar con GPU: lolMiner retiró el algoritmo "
             "kHeavyHash de sus versiones recientes (la red de Kaspa está "
@@ -139,7 +139,7 @@ MONEDAS_GPU = {
     },
     "RVN": {
         "nombre": "Ravencoin", "algoritmo": "KawPow", "vram_min_gb": 4, "motor": "kawpowminer",
-        "soportado_por_minar_hoy": True, "comision_pct": 0.0, "orden_respaldo": 3,
+        "soportado_por_minar_hoy": True, "comision_pct": 0.0, "orden_respaldo": 5,
         "riesgo": (
             "Probado de verdad en dos GPUs NVIDIA distintas (2026-08-24) y "
             "ninguna consigue minar todavía: en una RTX 5060 (Blackwell) "
@@ -151,23 +151,33 @@ MONEDAS_GPU = {
             "interno anticuado), no de esta app — ver docs/DECISIONS.md."
         ),
     },
-    "ERG": {"nombre": "Ergo", "algoritmo": "Autolykos2", "vram_min_gb": 6, "motor": "lolMiner / T-Rex", "orden_respaldo": 4},
-    "ETC": {"nombre": "Ethereum Classic", "algoritmo": "Etchash", "vram_min_gb": 6, "motor": "T-Rex / gminer", "orden_respaldo": 5},
+    "ERG": {
+        "nombre": "Ergo", "algoritmo": "Autolykos2", "vram_min_gb": 6, "motor": "lolMiner",
+        "soportado_por_minar_hoy": True, "comision_pct": 1.5, "orden_respaldo": 3,
+    },
+    "ETC": {"nombre": "Ethereum Classic", "algoritmo": "Etchash", "vram_min_gb": 6, "motor": "T-Rex / gminer", "orden_respaldo": 17},
     "FLUX": {"nombre": "Flux", "algoritmo": "ZelHash (Equihash 125,4)", "vram_min_gb": 4, "motor": "miniZ / lolMiner", "orden_respaldo": 8},
     "ZEC": {"nombre": "Zcash", "algoritmo": "Equihash (200,9)", "vram_min_gb": 2, "motor": "miniZ / lolMiner", "orden_respaldo": 9},
     "BTG": {"nombre": "Bitcoin Gold", "algoritmo": "Equihash (144,5)", "vram_min_gb": 4, "motor": "miniZ / lolMiner", "orden_respaldo": 11},
-    "BEAM": {"nombre": "Beam", "algoritmo": "BeamHash III", "vram_min_gb": 4, "motor": "lolMiner / gminer", "orden_respaldo": 10},
+    "BEAM": {
+        "nombre": "Beam", "algoritmo": "BeamHash III", "vram_min_gb": 4, "motor": "lolMiner",
+        "soportado_por_minar_hoy": True, "comision_pct": 1.0, "orden_respaldo": 2,
+    },
     "FIRO": {"nombre": "Firo", "algoritmo": "FiroPow", "vram_min_gb": 5, "motor": "T-Rex / gminer", "orden_respaldo": 7},
-    "CFX": {"nombre": "Conflux", "algoritmo": "Octopus", "vram_min_gb": 6, "motor": "lolMiner / gminer", "orden_respaldo": 6},
+    "CFX": {"nombre": "Conflux", "algoritmo": "Octopus", "vram_min_gb": 6, "motor": "lolMiner / gminer", "orden_respaldo": 16},
     "ALPH": {
         "nombre": "Alephium", "algoritmo": "Blake3", "vram_min_gb": 2, "motor": "lolMiner",
-        "soportado_por_minar_hoy": True, "comision_pct": 0.75, "orden_respaldo": 2,
+        "soportado_por_minar_hoy": True, "comision_pct": 0.75, "orden_respaldo": 4,
         # Confirmado por Carlos minando de verdad el 2026-08-24 (RTX 4060
         # Laptop): conecta, calcula y envía comparios al pool sin problema.
         # El ingreso real es minúsculo hoy (ver estimacion_ingreso.py y
         # docs/DECISIONS.md) — esto solo confirma que FUNCIONA, no que
         # compense.
         "confirmado_en_hardware_real": True,
+    },
+    "IRON": {
+        "nombre": "Iron Fish", "algoritmo": "FishHash", "vram_min_gb": 4, "motor": "lolMiner",
+        "soportado_por_minar_hoy": True, "comision_pct": 1.0, "orden_respaldo": 1,
     },
     "ZANO": {"nombre": "Zano", "algoritmo": "ProgPowZ", "vram_min_gb": 4, "motor": "gminer", "orden_respaldo": 12},
     "NEXA": {"nombre": "Nexa", "algoritmo": "NexaPow", "vram_min_gb": 2, "motor": "bzminer", "orden_respaldo": 13},

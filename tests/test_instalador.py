@@ -212,7 +212,12 @@ class TestAsegurarMotor(unittest.TestCase):
             extraido.mkdir(parents=True)
             (extraido / "WinRing0x64.sys").write_text("driver de mentira")
 
-            with patch("instalador.urllib.request.urlopen") as mock_urlopen:
+            # shutil.which mockeado a propósito: sin esto, el test depende de
+            # que el PATH real de la máquina no tenga ningún "xmrig" — visto
+            # fallar de forma no reproducible, igual que en
+            # test_no_descarga_si_ya_esta_en_bin.
+            with patch("motores.shutil.which", return_value=None), \
+                 patch("instalador.urllib.request.urlopen") as mock_urlopen:
                 instalador.asegurar_motor("xmrig", raiz)
             mock_urlopen.assert_not_called()  # no hace falta descargar nada
 

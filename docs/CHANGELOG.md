@@ -1,5 +1,38 @@
 # Historial de sesiones
 
+## 2026-08-24 (6) — Añadidas Iron Fish, Ergo y Beam: las monedas de GPU con mejores ingresos reales
+
+- Investigación con datos en vivo (`whattomine.com/coins.json`, un
+  ranking real de rentabilidad) en vez de reutilizar el ranking a
+  ciegas de 2026-08-20. Descartadas monedas KawPow (mismo motor roto
+  que RVN), monedas sin pool real que responda (Karlsen, a pesar de
+  tener la mejor puntuación de las candidatas serias) y monedas
+  extremadamente pequeñas/de riesgo alto.
+- Añadidas **Iron Fish (IRON)**, **Ergo (ERG)** y **Beam (BEAM)** — las
+  tres con pool HeroMiners real, precio verificado en CoinGecko, y
+  algoritmo soportado por lolMiner (comprobado con
+  `lolMiner.exe --list-algos` en esta máquina, no adivinado). lolMiner
+  ya es el motor confirmado sin fallos en esta GPU con ALPH, así que
+  evita por completo el problema de kawpowminer con GPUs NVIDIA
+  modernas.
+- Prueba real breve en esta GPU (con direcciones de prueba, sin wallet
+  real todavía): las tres detectan la GPU y calculan sin fallar.
+- Bug real encontrado y arreglado de paso: el formato de velocidad de
+  BeamHash usa "Sol/s" en vez de "H/s" — `minar.py` no lo reconocía en
+  absoluto. Añadida la familia de unidades sol/ksol/msol/gsol.
+- `src/minar.py`, `src/monedas.py`, `src/estimacion_ingreso.py`,
+  `wallets.md`, README.md y `CLAUDE.md` actualizados. `orden_respaldo`
+  de KAS/RVN/ALPH y las tres nuevas reordenado para reflejar el ranking
+  real.
+- Ninguna de las tres se marcó como "confirmada en hardware real"
+  todavía (solo se probó técnicamente, no con una wallet real de
+  principio a fin) — pendiente de que Carlos la confirme.
+- 185 tests en verde (antes 177). De paso, endurecido otro test flaky
+  preexistente con el mismo arreglo ya usado antes (mockear
+  `shutil.which`).
+- `docs/DECISIONS.md` con el detalle completo de la investigación, las
+  candidatas descartadas y por qué.
+
 ## 2026-08-24 (5) — ALPH ya tiene estimación de ingreso (con datos reales, apenas rinde), y arreglado el hashrate real de lolMiner
 
 - Carlos confirmó minado real de ALPH funcionando. Nueva fuente de datos

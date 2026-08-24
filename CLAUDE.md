@@ -74,26 +74,35 @@ clave privada). Si se toca este fichero, nunca hay que escribir en él
 una clave privada o frase semilla real.
 
 Monedas soportadas hoy por `minar.py` (ver tabla completa en README.md):
-XMR, WOW, ZEPH, SAL, RTM (CPU, motor xmrig) y RVN, ALPH (GPU, motores
-kawpowminer/lolMiner). Las de GPU están implementadas y con tests, pero
-**todavía sin confirmar contra una GPU real** — están marcadas como tal
-en `monedas.py` (`tipo == "gpu"` + `soportado_por_minar_hoy == True`
-implica "sin confirmar" por convención, vía
-`OpcionMoneda.confirmado_en_hardware_real` en `recomendador.py`, que
-hoy da por hecho que ninguna GPU está confirmada) y en la interfaz del
-formulario (icono 🧪). El ordenador de Carlos SÍ tiene GPU real (NVIDIA
-RTX 4060 Laptop, 8GB — detectada por `hardware.py` en esta misma
-máquina), así que en cuanto confirme que alguna de estas mina de
-verdad, hay que actualizar `confirmado_en_hardware_real` (o el dato
-correspondiente en `monedas.py`) para que pase a mostrarse con ✅ en vez
-de 🧪. **KAS se quitó de la lista el 2026-08-24** (lolMiner retiró su
-algoritmo, ver docs/DECISIONS.md); **RVN, probado de verdad en dos GPUs
-NVIDIA distintas (la RTX 4060 Laptop de este ordenador y una RTX 5060
-en otro equipo), no ha conseguido minar en ninguna de las dos** —
-kawpowminer falla de una forma distinta en cada una (ver
-docs/DECISIONS.md), pero las dos son limitaciones del propio programa,
-no de esta app. Sigue marcada como soportada porque el comando que
-genera minar.py es correcto; el problema está en el binario externo.
+XMR, WOW, ZEPH, SAL, RTM (CPU, motor xmrig) y RVN, ALPH, IRON, ERG, BEAM
+(GPU, motores kawpowminer/lolMiner). El estado "confirmado contra
+hardware real" se marca a mano, moneda por moneda, en `monedas.py`
+(clave `confirmado_en_hardware_real`, leída por
+`OpcionMoneda.confirmado_en_hardware_real` en `recomendador.py`) y se
+ve en el formulario como ✅ (confirmado) o 🧪 (todavía no). El ordenador
+de Carlos SÍ tiene GPU real (NVIDIA RTX 4060 Laptop, 8GB — detectada
+por `hardware.py` en esta misma máquina). Estado actual, todo verificado
+de verdad, no adivinado (ver docs/DECISIONS.md entradas 17-20 para el
+detalle completo):
+- **KAS**: quitada de la lista el 2026-08-24 — lolMiner retiró el
+  algoritmo que necesitaba.
+- **RVN**: sigue "soportada" (el comando que genera `minar.py` es
+  correcto) pero **no confirmada**: probada de verdad en dos GPUs NVIDIA
+  distintas (la RTX 4060 Laptop de este ordenador y una RTX 5060 en
+  otro equipo) y kawpowminer falla en las dos, de forma distinta — es
+  una limitación del propio programa externo, no de esta app.
+- **ALPH**: ✅ confirmada — Carlos la minó de verdad el 2026-08-24. El
+  ingreso real es minúsculo con los precios/dificultad de hoy (ver
+  `estimacion_ingreso.py`), pero funciona.
+- **IRON, ERG, BEAM**: añadidas el 2026-08-24 buscando mejores ingresos
+  reales (comparación con datos en vivo de whattomine.com en
+  docs/DECISIONS.md). Usan lolMiner, el mismo motor ya confirmado con
+  ALPH en esta GPU — probadas brevemente (sin wallet real, solo para
+  comprobar que arrancan) y las tres calculan sin fallar, pero
+  **todavía sin confirmar con una wallet real de principio a fin** —
+  en cuanto se confirme alguna, actualizar `confirmado_en_hardware_real`
+  en `monedas.py`.
+
 Añadir una moneda nueva que ya use un motor existente (mismo xmrig,
 kawpowminer o lolMiner) es sencillo; añadir una que necesite un motor
 distinto implica registrarlo primero en `motores.py`, investigando pool,

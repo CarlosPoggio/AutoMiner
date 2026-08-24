@@ -126,6 +126,24 @@ class TestConstruirComando(unittest.TestCase):
         self.assertIn("ALEPH", cmd)
         self.assertIn("de.alephium.herominers.com:1199", cmd)
 
+    def test_construir_comando_ironfish_usa_lolminer_algo_fishhash(self):
+        datos = {"wallet": "a" * 64, "moneda": "IRON"}
+        cmd = minar.construir_comando("lolMiner", "a" * 64, "IRON", datos)
+        self.assertIn("FISHHASH", cmd)
+        self.assertIn("de.ironfish.herominers.com:1145", cmd)
+
+    def test_construir_comando_ergo_usa_lolminer_algo_autolykos2(self):
+        datos = {"wallet": "9wallet", "moneda": "ERG"}
+        cmd = minar.construir_comando("lolMiner", "9wallet", "ERG", datos)
+        self.assertIn("AUTOLYKOS2", cmd)
+        self.assertIn("de.ergo.herominers.com:1180", cmd)
+
+    def test_construir_comando_beam_usa_lolminer_algo_beam3(self):
+        datos = {"wallet": "b" * 67, "moneda": "BEAM"}
+        cmd = minar.construir_comando("lolMiner", "b" * 67, "BEAM", datos)
+        self.assertIn("BEAM-III", cmd)
+        self.assertIn("de.beam.herominers.com:1130", cmd)
+
     def test_construir_comando_xmrig_respeta_donate_level(self):
         datos = {"wallet": "4wallet", "moneda": "XMR", "donate_level": "0"}
         cmd = minar.construir_comando("xmrig", "4wallet", "XMR", datos)
@@ -134,7 +152,7 @@ class TestConstruirComando(unittest.TestCase):
 
     def test_motor_de_moneda_no_soportada_da_error_util(self):
         with self.assertRaises(KeyError):
-            minar.MONEDAS_SOPORTADAS["ERG"]
+            minar.MONEDAS_SOPORTADAS["ZEC"]
 
 
 class TestInterpretarLinea(unittest.TestCase):
@@ -241,6 +259,17 @@ class TestExtraerHashrateReal(unittest.TestCase):
         self.assertIsNotNone(resultado)
         hz, texto = resultado
         self.assertAlmostEqual(hz, 43.37 * 1e6)
+
+    def test_lolminer_beam_sol_por_segundo(self):
+        # BeamHash (familia Equihash) mide en "soluciones/s", no en H/s —
+        # visto de verdad minando BEAM (2026-08-24). Sin este caso, el
+        # patrón (que solo reconocía kh/mh/gh/h) no coincidía nunca.
+        linea = "Average speed (15s): 0.0 sol/s"
+        resultado = minar.extraer_hashrate_real(linea, "lolminer")
+        self.assertIsNotNone(resultado)
+        hz, texto = resultado
+        self.assertEqual(hz, 0.0)
+        self.assertIn("sol/s", texto.lower())
 
     def test_lolminer_una_sola_gpu_sin_total(self):
         # Formato real capturado minando ALPH de verdad con una sola GPU

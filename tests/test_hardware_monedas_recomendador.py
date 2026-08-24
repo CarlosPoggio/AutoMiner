@@ -32,9 +32,13 @@ class TestCatalogoMonedas(unittest.TestCase):
 
     def test_monedas_soportadas_hoy_coinciden_con_minar(self):
         # KAS se quitó el 2026-08-24: lolMiner ya no soporta su algoritmo
-        # (ver docs/DECISIONS.md).
+        # (ver docs/DECISIONS.md). IRON/ERG/BEAM añadidas el mismo día
+        # (mejores ingresos reales, mismo motor lolMiner ya probado).
         soportadas = {s for s, d in monedas.TODAS_LAS_MONEDAS.items() if d["soportado_por_minar_hoy"]}
-        self.assertEqual(soportadas, {"XMR", "WOW", "ZEPH", "SAL", "RTM", "RVN", "ALPH"})
+        self.assertEqual(
+            soportadas,
+            {"XMR", "WOW", "ZEPH", "SAL", "RTM", "RVN", "ALPH", "IRON", "ERG", "BEAM"},
+        )
         # Todas las soportadas hoy deben estar también en minar.py.
         import minar
 
@@ -42,7 +46,7 @@ class TestCatalogoMonedas(unittest.TestCase):
             self.assertIsNotNone(minar.resolver_moneda(simbolo), msg=simbolo)
 
     def test_monedas_gpu_soportadas_tienen_comision_documentada(self):
-        for simbolo in ("RVN", "ALPH"):
+        for simbolo in ("RVN", "ALPH", "IRON", "ERG", "BEAM"):
             self.assertIn("comision_pct", monedas.MONEDAS_GPU[simbolo], msg=simbolo)
 
     def test_alph_confirmada_en_hardware_real_rvn_todavia_no(self):
