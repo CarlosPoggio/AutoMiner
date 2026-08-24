@@ -20,9 +20,9 @@ cpu_wallet: TU_DIRECCION_DE_WALLET_AQUI
 gpu_moneda: RVN
 gpu_wallet: TU_DIRECCION_DE_WALLET_AQUI
 
-# Monedas soportadas hoy: XMR, WOW, ZEPH, SAL, RTM (CPU) y RVN, KAS, ALPH
-# (GPU — implementadas pero sin confirmar todavía en una tarjeta gráfica
-# real, ver docs/DECISIONS.md).
+# Monedas soportadas hoy: XMR, WOW, ZEPH, SAL, RTM (CPU) y RVN, ALPH,
+# IRON, ERG, BEAM (GPU — ver README.md para cuáles ya están confirmadas
+# contra una tarjeta gráfica real y docs/DECISIONS.md para el detalle).
 
 # Opcionales del bloque CPU:
 # cpu_pool: pool.ejemplo.com:3333

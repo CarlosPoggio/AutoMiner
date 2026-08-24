@@ -16,32 +16,42 @@ Cada moneda incluye:
 - motor: el programa externo que haría el minado de verdad.
 - soportado_por_minar_hoy: si `src/minar.py` ya sabe construir el comando
   para arrancar esta moneda. Hoy: Monero, Wownero, Zephyr, Salvium y
-  Raptoreum (CPU, motor xmrig) y Ravencoin y Alephium (GPU, motores
-  kawpowminer/lolMiner). Kaspa se quitó de aquí el 2026-08-24: lolMiner
-  retiró el algoritmo que usaba (ver "riesgo" en su entrada, más abajo,
-  y docs/DECISIONS.md). El resto necesitaría instalar y controlar otro
-  programa de minado distinto: un paso futuro a propósito, no de esta
-  versión.
+  Raptoreum (CPU, motor xmrig) y Ravencoin, Alephium, Iron Fish, Ergo y
+  Beam (GPU, motores kawpowminer/lolMiner — ver tabla completa en
+  README.md). Kaspa se quitó de aquí el 2026-08-24: lolMiner retiró el
+  algoritmo que usaba (ver "riesgo" en su entrada, más abajo, y
+  docs/DECISIONS.md). El resto de monedas del catálogo necesitaría
+  instalar y controlar otro programa de minado distinto: un paso futuro
+  a propósito, no de esta versión.
 - comision_pct: comisión aproximada del motor de minado (0 si es
   gratuito de verdad, como xmrig con --donate-level 0 o kawpowminer).
   Solo está rellena para las monedas ya soportadas.
 - orden_respaldo: posición en un ranking de ingresos aproximado, por si
   no hay conexión a internet para consultar datos en vivo (cuanto más
-  bajo el número, mejor posición tenía el 2026-08-20).
-- riesgo: nota opcional si es una moneda pequeña/poco líquida.
+  bajo el número, mejor posición). Investigado el 2026-08-20 para el
+  catálogo completo; las monedas de GPU ya soportadas se reordenaron el
+  2026-08-24 con datos reales de whattomine.com (ver docs/DECISIONS.md,
+  entrada 20) — más fiable que el ranking original a ciegas.
+- riesgo: nota opcional si es una moneda pequeña/poco líquida, o con
+  algún problema real conocido (ver entradas de RVN y KAS más abajo).
+- confirmado_en_hardware_real: solo presente (y en True) en las monedas
+  de GPU que alguien ya minó de verdad, de principio a fin, contra un
+  pool real (leído por `OpcionMoneda.confirmado_en_hardware_real` en
+  `recomendador.py`; se ve en el formulario como ✅ en vez de 🧪). Hoy:
+  Alephium e Iron Fish. Las de CPU no necesitan esta marca porque ya se
+  consideran confirmadas en cuanto están soportadas (se probaron en un
+  entorno con procesador real desde el principio del proyecto).
 
-IMPORTANTE sobre las monedas de GPU ya soportadas (RVN, ALPH): el
-comando que genera minar.py para ellas está probado (con un ejecutable
-de prueba, ver docs/DECISIONS.md), pero ninguna se ha confirmado minando
-de verdad contra un pool real todavía. Por convención, en el formulario
-y en la documentación, toda moneda con tipo "gpu" y
-soportado_por_minar_hoy=True se marca como "sin confirmar en hardware
-real" hasta que alguien la pruebe de verdad y lo confirme (entonces se
-puede añadir aquí un comentario con la fecha de confirmación). RVN, en
-concreto, ya se probó contra una GPU NVIDIA real (RTX 5060, Blackwell)
-y el motor arranca, pero falla por una limitación del propio
-kawpowminer con esa generación de tarjeta (ver su "riesgo" más abajo y
-docs/DECISIONS.md) — sigue sin confirmarse un minado real completo.
+IMPORTANTE sobre las monedas de GPU soportadas pero SIN confirmar
+todavía (RVN, ERG, BEAM): el comando que genera minar.py para ellas
+está probado (con un ejecutable de prueba o una conexión real de
+diagnóstico, ver docs/DECISIONS.md), pero no se ha completado un
+minado real de principio a fin con una wallet real. RVN, en concreto,
+SÍ se probó a fondo contra dos GPUs NVIDIA reales (RTX 4060 Laptop y
+RTX 5060, ambas modernas) y en las dos falla por una limitación del
+propio kawpowminer (ver su "riesgo" más abajo y docs/DECISIONS.md,
+entradas 17-18) — no es previsible que llegue a confirmarse sin un
+motor de minado distinto o una GPU más antigua.
 """
 
 MONEDAS_CPU = {

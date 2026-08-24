@@ -13,10 +13,11 @@ Cómo funciona (en palabras simples):
 Este script NO reinventa el minado desde cero: usa motores de minado ya
 existentes y de confianza (ver src/motores.py). Para las monedas de CPU
 usa XMRig (RandomX y GhostRider). Para las de GPU usa kawpowminer
-(gratuito, código abierto) o lolMiner (gratuito, con una pequeña
-comisión del 0,75% — ver docs/DECISIONS.md sobre por qué no se programó
-un motor propio). Ver docs/DECISIONS.md para las fuentes de cada pool
-por defecto.
+(gratuito, código abierto) o lolMiner (gratuito, con una comisión
+pequeña que varía según el algoritmo, entre 0,75% y 1,5% — ver
+src/monedas.py y docs/DECISIONS.md sobre por qué no se programó un
+motor propio). Ver docs/DECISIONS.md para las fuentes de cada pool por
+defecto.
 """
 
 import argparse

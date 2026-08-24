@@ -101,9 +101,9 @@ para no confundir, hasta que se implementen):
 | Beam (BEAM) | GPU | lolMiner | 1% | 🧪 sin confirmar |
 
 "Sin confirmar" significa: el comando que se genera está comprobado
-(con un programa de prueba), pero ninguna se ha confirmado minando de
-verdad de principio a fin contra un pool real todavía. Pruébalo en tu
-ordenador y cuenta qué tal ha ido.
+(con un programa de prueba), pero esa moneda en concreto todavía no se
+ha minado de verdad de principio a fin contra un pool real. Pruébalo en
+tu ordenador y cuenta qué tal ha ido.
 
 **Iron Fish, Ergo y Beam se añadieron el 2026-08-24** buscando mejores
 ingresos reales que RVN/KAS/ALPH (ver `docs/DECISIONS.md` para la

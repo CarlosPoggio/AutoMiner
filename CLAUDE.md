@@ -82,7 +82,7 @@ hardware real" se marca a mano, moneda por moneda, en `monedas.py`
 ve en el formulario como ✅ (confirmado) o 🧪 (todavía no). El ordenador
 de Carlos SÍ tiene GPU real (NVIDIA RTX 4060 Laptop, 8GB — detectada
 por `hardware.py` en esta misma máquina). Estado actual, todo verificado
-de verdad, no adivinado (ver docs/DECISIONS.md entradas 17-20 para el
+de verdad, no adivinado (ver docs/DECISIONS.md entradas 17-21 para el
 detalle completo):
 - **KAS**: quitada de la lista el 2026-08-24 — lolMiner retiró el
   algoritmo que necesitaba.

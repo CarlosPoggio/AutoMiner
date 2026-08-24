@@ -15,7 +15,7 @@ descargar nada:
   "xmrig/xmrig" en GitHub, sección Releases.
 - **kawpowminer** (Ravencoin): desde
   github.com/RavenCommunity/kawpowminer, sección Releases.
-- **lolMiner** (Kaspa, Alephium): desde
+- **lolMiner** (Alephium, Iron Fish, Ergo, Beam): desde
   github.com/Lolliedieb/lolMiner-releases, sección Releases.
 
 En Windows el nombre del fichero debe terminar en `.exe` (por ejemplo

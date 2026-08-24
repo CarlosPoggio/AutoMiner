@@ -32,9 +32,11 @@ Términos técnicos usados en este proyecto, explicados en una línea.
   soporta de forma oficial, igual que RandomX.
 - **kawpowminer**: el motor de minado que usa este proyecto para
   Ravencoin. Código abierto, sin comisión.
-- **lolMiner**: el motor de minado que usa este proyecto para Kaspa y
-  Alephium. Gratuito, pero de código cerrado y con una pequeña comisión
-  del 0,75%.
+- **lolMiner**: el motor de minado que usa este proyecto para Alephium,
+  Iron Fish, Ergo y Beam (antes también para Kaspa, hasta que lolMiner
+  retiró ese algoritmo — ver docs/DECISIONS.md). Gratuito, pero de
+  código cerrado y con una comisión pequeña que varía según el
+  algoritmo (0,75% a 1,5%, ver `src/monedas.py`).
 - **Minar en solitario (solo mining)**: minar sin unirte a un pool,
   conectándote directamente a la red de la moneda. Con un solo
   ordenador, casi nunca se llega a encontrar recompensa; por eso este
@@ -96,3 +98,20 @@ Términos técnicos usados en este proyecto, explicados en una línea.
 - **CVE**: identificador público y oficial de una vulnerabilidad de
   seguridad conocida y documentada (por ejemplo, CVE-2020-14979), para
   poder referirse a ella de forma inequívoca.
+- **HeroMiners**: proveedor de pools públicos que este proyecto usa por
+  defecto para varias monedas (Salvium, Zephyr, Alephium, Iron Fish,
+  Ergo, Beam) — cada moneda tiene su propio subdominio
+  (`<moneda>.herominers.com`) con una API pública en `/api/stats`.
+- **whattomine.com**: web pública que da un índice de rentabilidad en
+  vivo para muchas criptomonedas — se usó para investigar qué monedas
+  de GPU añadir (ver docs/DECISIONS.md, entrada 20). No cubre todas las
+  monedas de este proyecto.
+- **Sol/s (soluciones por segundo)**: la unidad de velocidad que usan
+  los algoritmos de la familia Equihash (como BeamHash III, moneda
+  Beam) en vez de H/s — mide "soluciones" encontradas, no hashes.
+- **Motor "3D" vs "Cuda" (Windows)**: el Administrador de tareas de
+  Windows (y varios contadores de rendimiento) muestran por defecto el
+  uso del motor "3D" de la GPU, que los programas de minado por GPU
+  (CUDA) no usan — así que pueden parecer al 0% aunque estén minando al
+  100% de verdad. Hay que cambiar la gráfica a mano al motor "Cuda"
+  para verlo bien (ver docs/DECISIONS.md, entrada 21).
