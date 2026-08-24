@@ -280,19 +280,33 @@ def asegurar_motor(
     return str(destino)
 
 
+# Extensiones de "librería"/controlador que un motor puede traer junto a su
+# ejecutable y necesitar para arrancar siquiera (por ejemplo WinRing0x64.sys
+# de xmrig, o las DLLs de NVRTC que trae kawpowminer para GPUs NVIDIA). En
+# vez de mantener a mano una lista de nombres exactos por motor —que se
+# desactualiza en cuanto el proyecto original sube de versión, por ejemplo
+# si kawpowminer empaqueta mañana "nvrtc64_120_0.dll" en lugar de
+# "nvrtc64_112_0.dll"—, se copia cualquier fichero de estos tipos que venga
+# en la descarga, sea cual sea su nombre exacto.
+_EXTENSIONES_ACOMPANANTES = {".dll", ".sys", ".so", ".dylib"}
+
+
 def _copiar_ficheros_acompanantes_si_faltan(nombre_motor: str, raiz_proyecto: Path) -> None:
-    """Copia a bin/ los ficheros que un motor necesita junto a su
-    ejecutable (por ejemplo, WinRing0x64.sys de xmrig), si la carpeta
-    descomprimida original todavía existe y todavía no se copiaron. Si
-    no hay nada que hacer, no hace nada — nunca lanza error, porque
-    estos ficheros son opcionales (el motor funciona igual sin ellos)."""
+    """Copia a bin/ cualquier librería o controlador que el motor traiga en
+    su propia descarga (ver _EXTENSIONES_ACOMPANANTES), si la carpeta
+    descomprimida original todavía existe y todavía no se copió. Si no hay
+    nada que hacer, no hace nada — nunca lanza error, porque en general
+    estos ficheros son opcionales (algunos, como WinRing0x64.sys, solo
+    hacen falta para una optimización extra; otros, como las DLLs de
+    NVRTC de kawpowminer, hacen falta para que el motor arranque
+    siquiera, pero copiarlos aquí es igual de válido en los dos casos)."""
     dir_extraido = raiz_proyecto / "bin" / nombre_motor
     if not dir_extraido.is_dir():
         return
-    for nombre_extra in motores.MOTORES[nombre_motor].get("ficheros_acompanantes", []):
-        destino_extra = raiz_proyecto / "bin" / nombre_extra
+    for candidato in dir_extraido.rglob("*"):
+        if not candidato.is_file() or candidato.suffix.lower() not in _EXTENSIONES_ACOMPANANTES:
+            continue
+        destino_extra = raiz_proyecto / "bin" / candidato.name
         if destino_extra.exists():
             continue
-        origen_extra = _buscar_binario_extraido(dir_extraido, [nombre_extra])
-        if origen_extra is not None:
-            shutil.copy2(origen_extra, destino_extra)
+        shutil.copy2(candidato, destino_extra)

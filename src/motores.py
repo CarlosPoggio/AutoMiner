@@ -66,12 +66,6 @@ MOTORES = {
         # tú puedes cambiarla en config.md con "donate_level: N".
         "comision_pct": 1.0,
         "codigo_abierto": True,
-        # WinRing0x64.sys: controlador que xmrig necesita, junto al propio
-        # ejecutable, para el "MSR mod" (más hashrate en Windows, requiere
-        # administrador — ver src/rendimiento_windows.py). Sin permisos de
-        # administrador no se usa, pero da igual tenerlo copiado: xmrig
-        # sigue minando normal si no puede cargarlo.
-        "ficheros_acompanantes": ["WinRing0x64.sys"],
     },
     "kawpowminer": {
         "nombres_binario": ["kawpowminer", "kawpowminer.exe"],

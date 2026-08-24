@@ -1,5 +1,30 @@
 # Historial de sesiones
 
+## 2026-08-24 (2) — kawpowminer/NVIDIA no arrancaba: faltaban las DLLs de NVRTC
+
+- Diagnóstico recibido vía `GPU_ERROR.md` (otra sesión de Claude Code,
+  en otro ordenador, que reprodujo el fallo sin minar de verdad y sin
+  tocar el repo) — verificado antes de aplicar nada, correcto: la build
+  `cuda11` de kawpowminer necesita `nvrtc64_112_0.dll` y
+  `nvrtc-builtins64_112.dll`, que vienen en su `.zip` pero
+  `instalador.py` no copiaba a `bin/`.
+- Arreglo generalizado en vez del propuesto (lista de nombres fija):
+  `_copiar_ficheros_acompanantes_si_faltan` ahora copia cualquier
+  `.dll`/`.sys`/`.so`/`.dylib` que traiga la descarga del motor, sea
+  cual sea su nombre — cubre este caso, sigue cubriendo
+  `WinRing0x64.sys` de xmrig, y protege contra el mismo tipo de fallo
+  en el futuro (otro motor, o una versión de kawpowminer que cambie el
+  nombre de la DLL). `ficheros_acompanantes` se quitó de
+  `src/motores.py`, ya no hace falta.
+- Verificado con un test de regresión y, además, con una **descarga
+  real** de kawpowminer desde GitHub en este ordenador: las DLLs
+  aparecen copiadas y `kawpowminer.exe --help` (antes fallaba al
+  cargar la DLL) ya funciona. 170 tests en verde (antes 169).
+- `GPU_ERROR.md` eliminado (era solo diagnóstico temporal).
+- `docs/DECISIONS.md` con el detalle completo, incluido por qué NO se
+  tocó el dato de GPU de `CLAUDE.md` (la "RTX 5060" que menciona el
+  fichero es de un ordenador distinto al de Carlos).
+
 ## 2026-08-24 — Segunda causa del MSR mod: la lista de controladores vulnerables bloqueados
 
 - Tras la entrada anterior (Aislamiento del núcleo desactivado y

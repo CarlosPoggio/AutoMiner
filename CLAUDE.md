@@ -43,10 +43,13 @@ abrir la app, solo desde el lanzador de rendimiento máximo),
 `hardware.py` (detecta CPU/GPU), `monedas.py`
 (catálogo de monedas de CPU y GPU, con su comisión y si están
 implementadas), `motores.py` (sabe encontrar cada programa de minado —
-xmrig, kawpowminer, lolMiner — y construir su comando, incluidos
-ficheros acompañantes como `WinRing0x64.sys`), `instalador.py`
+xmrig, kawpowminer, lolMiner — y construir su comando), `instalador.py`
 (si un motor no está instalado, lo descarga solo desde su release
-oficial de GitHub y lo deja listo en `bin/`), `ingresos.py` (ranking de
+oficial de GitHub y lo deja listo en `bin/`; también copia junto al
+ejecutable cualquier `.dll`/`.sys`/`.so`/`.dylib` que traiga esa misma
+descarga y que el motor necesite para arrancar, como `WinRing0x64.sys`
+de xmrig o las DLLs de NVRTC de kawpowminer en GPUs NVIDIA — ver
+docs/DECISIONS.md entrada 16), `ingresos.py` (ranking de
 ingresos, en vivo o de reserva), `recomendador.py` (junta hardware +
 catálogo + ingresos; `recomendar_cpu`/`recomendar_gpu` separan las
 opciones de cada componente), `config_writer.py` (escribe `config.md`

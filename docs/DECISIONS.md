@@ -867,3 +867,64 @@ estado (desactivar/reactivar) se probó con pruebas automáticas que
 simulan el registro, no contra el tuyo de verdad — se aplicará solo
 cuando tú lo autorices desde el propio lanzador, con el aviso de la
 CVE delante.
+
+## 2026-08-24 (16) — kawpowminer (GPU NVIDIA) no arrancaba: mismo tipo de fallo que WinRing0x64.sys, pero con DLLs de CUDA
+
+Probaste minar Ravencoin (RVN) con GPU en otro ordenador y falló. Ese
+mismo ordenador ejecutó otra sesión de Claude Code, que diagnosticó el
+problema (sin minar de verdad, sin tocar el repo) y dejó el análisis en
+un fichero `GPU_ERROR.md` que subiste a `develop` para que lo
+resolviera. Comprobé el diagnóstico antes de aplicar nada, y es
+correcto: `kawpowminer.exe`, en la build para NVIDIA (`cuda11`),
+necesita dos DLLs que trae dentro de su propio `.zip`
+(`nvrtc64_112_0.dll`, `nvrtc-builtins64_112.dll`) pero que
+`src/instalador.py` no copiaba a `bin/` junto al ejecutable — solo
+copiaba el `.exe`. Sin ellas, `kawpowminer.exe` ni siquiera llega a
+arrancar (falla al cargar la DLL, antes de leer un solo argumento).
+
+En vez de aplicar el arreglo propuesto en `GPU_ERROR.md` tal cual
+(añadir esos dos nombres de fichero a una lista, igual que ya existía
+para `WinRing0x64.sys` de xmrig), aquí generalicé la solución, porque
+el problema de fondo es una clase de fallo, no un caso aislado:
+mantener a mano una lista de nombres exactos por motor se desactualiza
+en cuanto el proyecto original (kawpowminer, en este caso) suba de
+versión — por ejemplo, el día que su CUDA empaquetado pase de la
+versión 11.2 a otra, el nombre cambiaría a algo como
+`nvrtc64_120_0.dll` y volveríamos a tener este mismo bug con un nombre
+distinto.
+
+Arreglo aplicado en `src/instalador.py`
+(`_copiar_ficheros_acompanantes_si_faltan`): en vez de copiar solo los
+nombres de una lista fija, copia a `bin/` **cualquier fichero de
+librería/controlador** (`.dll`, `.sys`, `.so`, `.dylib`) que venga
+dentro de la descarga del motor, sea cual sea su nombre exacto. Esto
+cubre el caso de kawpowminer/NVIDIA de golpe, sigue cubriendo
+`WinRing0x64.sys` de xmrig igual que antes (por eso se pudo quitar la
+lista `ficheros_acompanantes` de `src/motores.py`, ya no hace falta) y,
+de paso, protege contra el mismo tipo de fallo si algún día aparece en
+lolMiner o en una versión futura de cualquiera de los tres motores.
+
+Verificado de dos formas, no solo con mocks:
+1. Nuevo test de regresión (`tests/test_instalador.py`) que reproduce
+   exactamente el caso de `GPU_ERROR.md` con un `.zip` simulado.
+2. **Descarga real** de kawpowminer desde GitHub en este ordenador
+   (`instalador.asegurar_motor("kawpowminer", ..., fabricante_gpu="NVIDIA")`,
+   sin mocks) — las dos DLLs aparecieron copiadas en `bin/` de verdad, y
+   `bin/kawpowminer.exe --help` (el mismo comando que usó `GPU_ERROR.md`
+   para reproducir el fallo, sin conectarse a ningún pool) ya devuelve
+   la versión del programa en vez de fallar.
+
+Lo que queda pendiente, y no se ha hecho aquí porque haría falta
+conectarse a un pool real: confirmar que kawpowminer llega a minar RVN
+de verdad contra la GPU (NVIDIA RTX 4060 Laptop en este ordenador). Ver
+`CLAUDE.md` para la regla sobre no arrancar minado real sin pedirlo tú
+en el momento.
+
+Dato aparte que llevaba `GPU_ERROR.md`, y que decidí NO aplicar sin
+comprobarlo: mencionaba que `nvidia-smi` detectó "RTX 5060" en el otro
+ordenador donde se reprodujo el fallo, distinto de la "RTX 4060
+Laptop" que dice `CLAUDE.md`. Eso no es una discrepancia real: son dos
+ordenadores distintos (el tuyo, con la RTX 4060 Laptop, y el "otro
+equipo" donde probaste GPU, con otra tarjeta) — así que no he tocado el
+dato de `CLAUDE.md`, que sigue describiendo correctamente este
+ordenador.

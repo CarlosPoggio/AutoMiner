@@ -4,6 +4,7 @@ import sys
 import tarfile
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
@@ -125,6 +126,15 @@ def _fake_targz_multi(archivos: dict):
     return buf.getvalue()
 
 
+def _fake_zip_multi(archivos: dict):
+    """Como _fake_targz_multi, pero en .zip (nombre -> contenido)."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        for nombre_interno, contenido in archivos.items():
+            z.writestr(nombre_interno, contenido)
+    return buf.getvalue()
+
+
 class TestAsegurarMotor(unittest.TestCase):
     def test_no_descarga_si_ya_esta_en_bin(self):
         with tempfile.TemporaryDirectory() as d:
@@ -207,6 +217,34 @@ class TestAsegurarMotor(unittest.TestCase):
             mock_urlopen.assert_not_called()  # no hace falta descargar nada
 
             self.assertTrue((bin_dir / "WinRing0x64.sys").exists())
+
+    def test_kawpowminer_nvidia_copia_las_dll_de_nvrtc(self):
+        # Reproduce el bug real reportado en GPU_ERROR.md: la build cuda11
+        # de kawpowminer no arranca sin sus DLLs de NVRTC, y antes del
+        # arreglo solo se copiaba el .exe a bin/.
+        release = {"tag_name": "1.2.4", "assets": ASSETS_KAWPOW}
+        zip_bytes = _fake_zip_multi({
+            "kawpowminer-windows-cuda11-1.2.4/kawpowminer.exe": b"exe de mentira",
+            "kawpowminer-windows-cuda11-1.2.4/nvrtc64_112_0.dll": b"dll de mentira",
+            "kawpowminer-windows-cuda11-1.2.4/nvrtc-builtins64_112.dll": b"otra dll de mentira",
+        })
+
+        def fake_urlopen(peticion, timeout=None, **_kwargs):
+            url = getattr(peticion, "full_url", peticion)
+            if "api.github.com" in url:
+                return FakeResp(json.dumps(release).encode())
+            return FakeResp(zip_bytes)
+
+        with tempfile.TemporaryDirectory() as d:
+            raiz = Path(d)
+            with patch("instalador.platform.system", return_value="Windows"), \
+                 patch("motores.shutil.which", return_value=None), \
+                 patch("instalador.urllib.request.urlopen", side_effect=fake_urlopen):
+                instalador.asegurar_motor("kawpowminer", raiz, fabricante_gpu="NVIDIA")
+
+            self.assertTrue((raiz / "bin" / "kawpowminer.exe").exists())
+            self.assertTrue((raiz / "bin" / "nvrtc64_112_0.dll").exists())
+            self.assertTrue((raiz / "bin" / "nvrtc-builtins64_112.dll").exists())
 
     def test_kawpowminer_darwin_no_toca_red(self):
         with tempfile.TemporaryDirectory() as d:
