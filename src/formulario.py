@@ -37,6 +37,7 @@ from config_writer import guardar_config
 from recomendador import recomendar_cpu, recomendar_gpu
 from wallets_defecto import cargar_wallets_por_defecto
 import aislamiento_nucleo
+import lista_controladores_vulnerables
 import instalador
 import minar
 import estimacion_ingreso
@@ -722,7 +723,7 @@ class App(tk.Tk):
                 pass
         self.sesiones = []
         self._anexar("Minado detenido.")
-        self._preguntar_reactivar_aislamiento()
+        self._preguntar_reactivar_protecciones_seguridad()
 
     def _volver(self):
         self._detener()
@@ -734,35 +735,55 @@ class App(tk.Tk):
         self._detectar()
         self._construir_config()
 
-    def _preguntar_reactivar_aislamiento(self):
-        """Si esta misma app desactivó "Aislamiento del núcleo /
-        Integridad de memoria" para minar más rápido (ver
-        src/comprobar_aislamiento.py), pregunta ahora si se quiere
-        volver a activar. No hace nada si nunca se desactivó desde
-        aquí."""
-        if not aislamiento_nucleo.RUTA_MARCA.exists():
+    _PROTECCIONES_RENDIMIENTO = (
+        ("Aislamiento del núcleo / Integridad de memoria", aislamiento_nucleo),
+        ("Lista de controladores vulnerables bloqueados de Microsoft", lista_controladores_vulnerables),
+    )
+
+    def _preguntar_reactivar_protecciones_seguridad(self):
+        """Si esta misma app desactivó alguna protección de seguridad de
+        Windows para minar más rápido (ver
+        src/comprobar_seguridad_rendimiento.py), pregunta ahora si se
+        quiere volver a activar. No hace nada si nunca se desactivó
+        ninguna desde aquí."""
+        desactivadas = [
+            (nombre, modulo) for nombre, modulo in self._PROTECCIONES_RENDIMIENTO
+            if modulo.RUTA_MARCA.exists()
+        ]
+        if not desactivadas:
             return
+        lista_nombres = "\n".join(f"- {nombre}" for nombre, _modulo in desactivadas)
         quiere_reactivar = messagebox.askyesno(
-            "Aislamiento del núcleo",
-            "Desactivaste la protección de Windows \"Aislamiento del "
-            "núcleo / Integridad de memoria\" para minar más rápido. "
+            "Seguridad de Windows",
+            "Desactivaste esta protección de Windows para minar más "
+            f"rápido:\n\n{lista_nombres}\n\n"
             "¿Quieres volver a activarla ahora? (hace falta reiniciar "
             "el ordenador después para que se aplique)",
         )
         if quiere_reactivar:
-            ok, mensaje = aislamiento_nucleo.reactivar()
-            if ok:
-                aislamiento_nucleo.RUTA_MARCA.unlink(missing_ok=True)
+            avisos = []
+            for nombre, modulo in desactivadas:
+                ok, mensaje = modulo.reactivar()
+                if ok:
+                    modulo.RUTA_MARCA.unlink(missing_ok=True)
+                else:
+                    avisos.append(f"{nombre}: {mensaje}")
             # No usamos self._anexar aquí: puede que ni siquiera exista el
             # registro de log todavía (por ejemplo, si el usuario cierra
             # la app sin haber llegado a minar). Un aviso aparte siempre
             # funciona, esté donde esté la ventana en ese momento.
-            messagebox.showinfo("Aislamiento del núcleo", mensaje)
-        # Si dice que no, se deja la marca: se le volverá a preguntar
+            if avisos:
+                messagebox.showinfo("Seguridad de Windows", "Avisos:\n" + "\n".join(avisos))
+            else:
+                messagebox.showinfo(
+                    "Seguridad de Windows",
+                    "Hecho. Reinicia el ordenador para que se aplique de verdad.",
+                )
+        # Si dice que no, se dejan las marcas: se le volverá a preguntar
         # la próxima vez que detenga el minado o cierre la app.
 
     def _al_cerrar_ventana(self):
-        self._preguntar_reactivar_aislamiento()
+        self._preguntar_reactivar_protecciones_seguridad()
         self.destroy()
 
 

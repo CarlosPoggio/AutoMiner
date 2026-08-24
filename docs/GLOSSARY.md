@@ -81,3 +81,18 @@ Términos técnicos usados en este proyecto, explicados en una línea.
 - **Hilo (thread)**: una "tarea en paralelo" dentro de un mismo
   programa. Se usa para leer el registro del minado sin congelar la
   ventana mientras se muestra en pantalla.
+- **MSR mod**: una optimización de xmrig (~5-10% más hashrate en
+  Monero y monedas similares) que necesita cargar un controlador de
+  Windows (`WinRing0x64.sys`) con permiso de administrador cada vez que
+  arranca.
+- **Aislamiento del núcleo / Integridad de memoria (HVCI)**: protección
+  de seguridad de Windows que bloquea controladores de kernel antiguos
+  o sin firmar, entre ellos el que necesita el MSR mod.
+- **Lista de controladores vulnerables bloqueados**: otra protección de
+  seguridad de Windows, independiente de la anterior, activa por
+  defecto desde Windows 11 2022 Update, que bloquea controladores con
+  vulnerabilidades conocidas y documentadas (como una CVE) — también
+  afecta al controlador del MSR mod.
+- **CVE**: identificador público y oficial de una vulnerabilidad de
+  seguridad conocida y documentada (por ejemplo, CVE-2020-14979), para
+  poder referirse a ella de forma inequívoca.

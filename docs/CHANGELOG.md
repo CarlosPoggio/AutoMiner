@@ -1,5 +1,33 @@
 # Historial de sesiones
 
+## 2026-08-24 — Segunda causa del MSR mod: la lista de controladores vulnerables bloqueados
+
+- Tras la entrada anterior (Aislamiento del núcleo desactivado y
+  reiniciado), el MSR mod seguía fallando. Investigado en vivo en el
+  equipo real: `HKLM\SYSTEM\CurrentControlSet\Control\CI\Config\
+  VulnerableDriverBlocklistEnable = 1` — la lista de controladores
+  vulnerables bloqueados de Microsoft (activa por defecto desde
+  Windows 11 2022 Update, independiente de Aislamiento del núcleo)
+  bloquea `WinRing0x64.sys` por una CVE real y documentada
+  (CVE-2020-14979). Confirmado con KB5020779 de Microsoft.
+- Pedido explícito: llegar al máximo rendimiento asumiendo esa
+  vulnerabilidad conocida, avisando bien al usuario.
+- Nuevo `src/lista_controladores_vulnerables.py`, mismo patrón que
+  `aislamiento_nucleo.py` (leer/cambiar con `winreg`, nunca por su
+  cuenta).
+- `src/comprobar_aislamiento.py` sustituido por
+  `src/comprobar_seguridad_rendimiento.py`: comprueba las dos
+  protecciones (pueden estar activas a la vez) y hace una sola
+  pregunta combinada, con el aviso de la CVE y de la ganancia total
+  (~25-30% con huge pages + MSR mod, frente al ~20% de solo huge
+  pages).
+- `src/formulario.py`: la pregunta de "¿reactivamos?" ahora cubre las
+  dos protecciones, cada una si hace falta.
+- Añadidas 9 pruebas nuevas (169 en total). Verificado en real: la
+  lectura de `lista_controladores_vulnerables.esta_activo()` da `True`,
+  igual que el registro comprobado a mano; el cambio de estado solo se
+  probó con mocks, no contra el ajuste real.
+
 ## 2026-08-23 (14) — Causa real del MSR mod: "Aislamiento del núcleo", con opción de desactivarlo
 
 - Corregido: la entrada anterior decía que la máquina de desarrollo

@@ -32,7 +32,14 @@ lo llama `conceder_rendimiento.py` solo desde
 docs/DECISIONS.md entrada 13), `aislamiento_nucleo.py` (lee y cambia
 "Aislamiento del núcleo / Integridad de memoria" de Windows — bloquea
 el MSR mod de xmrig; nunca se cambia sin preguntar antes, ver
-`comprobar_aislamiento.py` y docs/DECISIONS.md entrada 14),
+docs/DECISIONS.md entrada 14), `lista_controladores_vulnerables.py`
+(lee y cambia la "lista de controladores vulnerables bloqueados" de
+Microsoft — otra protección independiente que también bloquea el MSR
+mod, porque `WinRing0x64.sys` tiene una CVE real conocida; mismo
+cuidado que aislamiento_nucleo.py, nunca se cambia sin preguntar antes,
+ver docs/DECISIONS.md entrada 15), `comprobar_seguridad_rendimiento.py`
+(el script que pregunta por las dos protecciones anteriores antes de
+abrir la app, solo desde el lanzador de rendimiento máximo),
 `hardware.py` (detecta CPU/GPU), `monedas.py`
 (catálogo de monedas de CPU y GPU, con su comisión y si están
 implementadas), `motores.py` (sabe encontrar cada programa de minado —

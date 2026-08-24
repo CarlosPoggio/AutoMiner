@@ -810,3 +810,60 @@ que la LECTURA del estado funciona de verdad en tu equipo (dio
 registro de Windows, sin tocar el tuyo de verdad — esa acción solo
 ocurrirá cuando tú la autorices desde el propio lanzador, nunca desde
 aquí.
+
+## 2026-08-24 — Segunda causa del MSR mod: la "lista de controladores vulnerables bloqueados" de Microsoft, independiente de Aislamiento del núcleo
+
+Seguiste el flujo completo de la entrada anterior (desactivar
+Aislamiento del núcleo, reiniciar, reabrir "modo rendimiento") y el MSR
+mod seguía fallando: `FAILED TO APPLY MSR MOD, HASHRATE WILL BE LOW`.
+En vez de suponer que el arreglo anterior no había funcionado,
+investigué directamente en tu equipo, en vivo:
+
+- Confirmé por código (`aislamiento_nucleo.esta_activo()`) que
+  Aislamiento del núcleo seguía desactivado de verdad — no era eso.
+- `WinRing0x64.sys` está presente en `bin/` — tampoco era el fichero
+  que faltaba (entrada 13).
+- Pero `sc query WinRing0_1_2_0` decía que el servicio del controlador
+  ni siquiera llega a crearse.
+- En el registro: `HKLM\SYSTEM\CurrentControlSet\Control\CI\Config\
+  VulnerableDriverBlocklistEnable = 1`.
+
+Ese valor es la **"lista de controladores vulnerables bloqueados"** de
+Microsoft: activa por defecto en Windows desde la actualización de
+2022 de Windows 11, y **es un ajuste totalmente independiente de
+Aislamiento del núcleo** (desactivar uno no desactiva el otro, aunque
+los dos puedan bloquear el mismo controlador). `WinRing0x64.sys` está
+en esa lista porque tiene una vulnerabilidad real y documentada,
+CVE-2020-14979: un proceso sin privilegios puede leer/escribir memoria
+del sistema y llegar a control total (SYSTEM). Fuentes: KB5020779 de
+Microsoft (support.microsoft.com/topic/kb5020779) y el propio registro
+comprobado en tu máquina, no una suposición.
+
+Pediste explícitamente ir a por el máximo rendimiento posible **a pesar
+de la seguridad, avisando bien al usuario de la vulnerabilidad que
+asume**. Implementado así:
+
+- `src/lista_controladores_vulnerables.py`: mismo patrón que
+  `aislamiento_nucleo.py` (leer con `winreg`, cambiar con `winreg`,
+  nunca tocar nada por su cuenta, solo cuando se le pide
+  explícitamente).
+- `src/comprobar_aislamiento.py` se sustituyó por
+  `src/comprobar_seguridad_rendimiento.py`: ahora comprueba las DOS
+  protecciones (son independientes, pueden estar bloqueando el MSR mod
+  a la vez, como te pasó a ti) y hace una sola pregunta combinada,
+  nombrando cuál(es) están activas. El mensaje deja claro que
+  desactivar la lista de controladores implica asumir la CVE conocida,
+  y que el beneficio total (huge pages + MSR mod) es ~25-30% más
+  hashrate frente al ~20% que ya tenías solo con huge pages.
+- `src/formulario.py`: la pregunta de "¿reactivamos?" al detener el
+  minado o cerrar la ventana ahora cubre las dos protecciones — si
+  desactivaste las dos, te pregunta por las dos juntas; si solo una
+  seguía activa (como te pasó, Aislamiento del núcleo ya estaba
+  desactivado por la entrada anterior), solo pregunta por esa.
+
+Verificado en tu equipo real: `lista_controladores_vulnerables.esta_activo()`
+da `True`, igual que el registro comprobado a mano. El cambio de
+estado (desactivar/reactivar) se probó con pruebas automáticas que
+simulan el registro, no contra el tuyo de verdad — se aplicará solo
+cuando tú lo autorices desde el propio lanzador, con el aviso de la
+CVE delante.

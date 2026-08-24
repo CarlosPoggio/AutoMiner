@@ -34,15 +34,19 @@ falta, desde la página oficial del proyecto correspondiente en GitHub
    - **`Iniciar minado.bat`**: el normal, sin pedir nada especial.
    - **`Iniciar minado (rendimiento máximo).bat`**: pide permiso de
      administrador de Windows (una vez, al abrirlo) para minar más
-     rápido con la CPU en Monero y monedas similares (~10-30% más
-     hashrate, según tu hardware). Si Windows tiene activada la
-     protección "Aislamiento del núcleo / Integridad de memoria" (una
-     protección de seguridad real, no solo un ajuste de rendimiento),
-     te preguntará si quieres desactivarla para ganar ese extra — es tu
-     decisión, y puedes volver a activarla cuando quieras, la propia
-     app te lo pregunta al detener el minado o al cerrarla. Si
-     prefieres no dar ese permiso, usa el normal — sigue funcionando
-     exactamente igual, solo un poco más despacio en esas monedas.
+     rápido con la CPU en Monero y monedas similares (hasta ~25-30%
+     más hashrate, según tu hardware). Si Windows tiene activada
+     "Aislamiento del núcleo / Integridad de memoria" y/o la "lista de
+     controladores vulnerables bloqueados" de Microsoft (protecciones
+     de seguridad reales, independientes entre sí, no solo ajustes de
+     rendimiento), te preguntará si quieres desactivarlas para ganar
+     ese extra — avisando de que la segunda implica asumir una
+     vulnerabilidad real y conocida (CVE-2020-14979) del controlador
+     que usa el MSR mod. Es tu decisión, y puedes volver a activarlas
+     cuando quieras, la propia app te lo pregunta al detener el minado
+     o al cerrarla. Si prefieres no dar ese permiso, usa el normal —
+     sigue funcionando exactamente igual, solo un poco más despacio en
+     esas monedas.
 
    En Mac/Linux, o si prefieres no usar esos ficheros, ejecuta en una
    terminal:

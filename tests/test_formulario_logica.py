@@ -205,56 +205,87 @@ class TestAutorrellenoWalletAlMarcarCasilla(unittest.TestCase):
 
 
 @unittest.skipUnless(TIENE_FORMULARIO, "tkinter no disponible en este entorno")
-class TestPreguntarReactivarAislamiento(unittest.TestCase):
+class TestPreguntarReactivarProteccionesSeguridad(unittest.TestCase):
     def setUp(self):
         from unittest.mock import patch
         import ingresos
         self._parche_ingresos = patch.object(ingresos, "obtener_ingresos_en_vivo", return_value=None)
         self._parche_ingresos.start()
         self._dir = tempfile.TemporaryDirectory()
-        self._ruta_marca = Path(self._dir.name) / "_aislamiento_desactivado_por_app"
-        self._parche_ruta = patch("formulario.aislamiento_nucleo.RUTA_MARCA", self._ruta_marca)
-        self._parche_ruta.start()
+        self._ruta_marca_aislamiento = Path(self._dir.name) / "_aislamiento_desactivado_por_app"
+        self._ruta_marca_lista = Path(self._dir.name) / "_lista_bloqueo_desactivada_por_app"
+        self._parche_ruta_aislamiento = patch(
+            "formulario.aislamiento_nucleo.RUTA_MARCA", self._ruta_marca_aislamiento
+        )
+        self._parche_ruta_lista = patch(
+            "formulario.lista_controladores_vulnerables.RUTA_MARCA", self._ruta_marca_lista
+        )
+        self._parche_ruta_aislamiento.start()
+        self._parche_ruta_lista.start()
 
     def tearDown(self):
         self._parche_ingresos.stop()
-        self._parche_ruta.stop()
+        self._parche_ruta_aislamiento.stop()
+        self._parche_ruta_lista.stop()
         self._dir.cleanup()
 
-    def test_sin_marca_no_pregunta_nada(self):
+    def test_sin_marcas_no_pregunta_nada(self):
         from unittest.mock import patch
         app = formulario.App()
         try:
             with patch("formulario.messagebox.askyesno") as mock_pregunta:
-                app._preguntar_reactivar_aislamiento()
+                app._preguntar_reactivar_protecciones_seguridad()
             mock_pregunta.assert_not_called()
         finally:
             app.destroy()
 
-    def test_con_marca_y_usuario_dice_si_reactiva_y_borra_la_marca(self):
+    def test_con_una_marca_y_usuario_dice_si_reactiva_y_borra_la_marca(self):
         from unittest.mock import patch
-        self._ruta_marca.write_text("desactivado por la app")
+        self._ruta_marca_aislamiento.write_text("desactivado por la app")
         app = formulario.App()
         try:
             with patch("formulario.messagebox.askyesno", return_value=True), \
                  patch("formulario.messagebox.showinfo"), \
-                 patch("formulario.aislamiento_nucleo.reactivar", return_value=(True, "Hecho.")) as mock_reactivar:
-                app._preguntar_reactivar_aislamiento()
+                 patch("formulario.aislamiento_nucleo.reactivar", return_value=(True, "Hecho.")) as mock_reactivar, \
+                 patch("formulario.lista_controladores_vulnerables.reactivar") as mock_reactivar_lista:
+                app._preguntar_reactivar_protecciones_seguridad()
             mock_reactivar.assert_called_once()
-            self.assertFalse(self._ruta_marca.exists())
+            mock_reactivar_lista.assert_not_called()
+            self.assertFalse(self._ruta_marca_aislamiento.exists())
+        finally:
+            app.destroy()
+
+    def test_con_las_dos_marcas_y_usuario_dice_si_reactiva_las_dos(self):
+        from unittest.mock import patch
+        self._ruta_marca_aislamiento.write_text("desactivado por la app")
+        self._ruta_marca_lista.write_text("desactivado por la app")
+        app = formulario.App()
+        try:
+            with patch("formulario.messagebox.askyesno", return_value=True), \
+                 patch("formulario.messagebox.showinfo"), \
+                 patch("formulario.aislamiento_nucleo.reactivar", return_value=(True, "Hecho.")) as mock_reactivar, \
+                 patch(
+                     "formulario.lista_controladores_vulnerables.reactivar",
+                     return_value=(True, "Hecho."),
+                 ) as mock_reactivar_lista:
+                app._preguntar_reactivar_protecciones_seguridad()
+            mock_reactivar.assert_called_once()
+            mock_reactivar_lista.assert_called_once()
+            self.assertFalse(self._ruta_marca_aislamiento.exists())
+            self.assertFalse(self._ruta_marca_lista.exists())
         finally:
             app.destroy()
 
     def test_con_marca_y_usuario_dice_no_conserva_la_marca(self):
         from unittest.mock import patch
-        self._ruta_marca.write_text("desactivado por la app")
+        self._ruta_marca_aislamiento.write_text("desactivado por la app")
         app = formulario.App()
         try:
             with patch("formulario.messagebox.askyesno", return_value=False), \
                  patch("formulario.aislamiento_nucleo.reactivar") as mock_reactivar:
-                app._preguntar_reactivar_aislamiento()
+                app._preguntar_reactivar_protecciones_seguridad()
             mock_reactivar.assert_not_called()
-            self.assertTrue(self._ruta_marca.exists())  # se pregunta otra vez la próxima
+            self.assertTrue(self._ruta_marca_aislamiento.exists())  # se pregunta otra vez la próxima
         finally:
             app.destroy()
 
