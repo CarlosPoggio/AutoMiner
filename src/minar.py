@@ -218,10 +218,15 @@ class SesionMinado:
         self.proceso = proceso
         self.hilo_lector = hilo_lector
         self.bloque = bloque
+        # Para distinguir "el usuario pidió parar" de "el motor se cayó
+        # solo" — ver el aviso que se muestra en este segundo caso, más
+        # abajo en iniciar_minado().
+        self.detenido_por_usuario = False
 
     def detener(self, timeout: float = 5.0) -> None:
         """Pide al proceso que termine; si no lo hace en `timeout` segundos,
         lo mata a la fuerza."""
+        self.detenido_por_usuario = True
         if self.proceso.poll() is None:
             self.proceso.terminate()
             try:
@@ -267,6 +272,7 @@ def iniciar_minado(
     proceso = subprocess.Popen(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
     )
+    sesion = SesionMinado(proceso, None, bloque)
 
     def leer():
         try:
@@ -275,10 +281,27 @@ def iniciar_minado(
         finally:
             if proceso.stdout is not None:
                 proceso.stdout.close()
+            # Si el proceso termina solo, sin que el usuario pidiera parar,
+            # y sin avisar de nada por su cuenta (por ejemplo, un cierre
+            # brusco del motor de minado: en Windows he visto morir así a
+            # kawpowminer justo después de generar el DAG en una GPU
+            # moderna — ver docs/DECISIONS.md), antes esto se quedaba en
+            # silencio total sin ningún aviso más. Ahora se avisa siempre.
+            codigo = proceso.wait()
+            if codigo != 0 and not sesion.detenido_por_usuario:
+                on_linea(
+                    bloque,
+                    "El programa de minado terminó solo con un error, sin que "
+                    f"tú lo pararas (código de salida {codigo}). No es un fallo "
+                    "de esta app: es el propio programa de minado el que se ha "
+                    "cerrado. Activa \"ver log técnico completo\" para más "
+                    "detalle, o inténtalo de nuevo.",
+                )
 
     hilo = threading.Thread(target=leer, daemon=True)
+    sesion.hilo_lector = hilo
     hilo.start()
-    return SesionMinado(proceso, hilo, bloque)
+    return sesion
 
 
 def interpretar_linea(linea_cruda: str) -> str | None:
@@ -296,6 +319,18 @@ def interpretar_linea(linea_cruda: str) -> str | None:
         idx = l.index("speed")
         resto = linea_cruda[idx:].strip()
         return f"⚡ Velocidad: {resto}" if resto else f"⚡ Velocidad: {linea_cruda.strip()}"
+    # El informe periódico de velocidad de kawpowminer no contiene la
+    # palabra "speed" (formato real distinto al de xmrig, confirmado con
+    # una GPU real — ver docs/DECISIONS.md), así que sin este caso aparte
+    # se perdía como "ruido" y el log sencillo se quedaba en silencio
+    # durante todo el minado por GPU, aunque sí estuviera funcionando.
+    m_kawpow = _RE_KAWPOWMINER.search(linea_cruda)
+    if m_kawpow:
+        return f"⚡ Velocidad: {m_kawpow.group(1)} {m_kawpow.group(2)}/s"
+    if "generating dag" in l:
+        return "🧮 Preparando la GPU (generando el DAG)... puede tardar un rato la primera vez de cada época"
+    if "generated dag" in l:
+        return "🧮 GPU lista, arrancando el cálculo real"
     # "invalid device symbol" se comprueba antes que el genérico de abajo
     # porque, si no, también contiene la palabra "error" y saldría como un
     # error críptico en inglés en vez de esta explicación. Es el fallo

@@ -87,11 +87,13 @@ máquina), así que en cuanto confirme que alguna de estas mina de
 verdad, hay que actualizar `confirmado_en_hardware_real` (o el dato
 correspondiente en `monedas.py`) para que pase a mostrarse con ✅ en vez
 de 🧪. **KAS se quitó de la lista el 2026-08-24** (lolMiner retiró su
-algoritmo, ver docs/DECISIONS.md); **RVN, probado en otro ordenador con
-una GPU NVIDIA Blackwell (RTX 50), arranca pero no llega a minar** por
-una limitación de kawpowminer con esa generación de tarjeta — sigue
-soportada porque en GPUs NVIDIA más antiguas no debería tener ese
-problema.
+algoritmo, ver docs/DECISIONS.md); **RVN, probado de verdad en dos GPUs
+NVIDIA distintas (la RTX 4060 Laptop de este ordenador y una RTX 5060
+en otro equipo), no ha conseguido minar en ninguna de las dos** —
+kawpowminer falla de una forma distinta en cada una (ver
+docs/DECISIONS.md), pero las dos son limitaciones del propio programa,
+no de esta app. Sigue marcada como soportada porque el comando que
+genera minar.py es correcto; el problema está en el binario externo.
 Añadir una moneda nueva que ya use un motor existente (mismo xmrig,
 kawpowminer o lolMiner) es sencillo; añadir una que necesite un motor
 distinto implica registrarlo primero en `motores.py`, investigando pool,

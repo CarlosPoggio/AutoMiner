@@ -1,5 +1,40 @@
 # Historial de sesiones
 
+## 2026-08-24 (4) — Minado real de RVN reproducido en este ordenador: kawpowminer se cierra solo, y el registro se quedaba mudo cuando eso pasaba
+
+- A petición de Carlos, prueba de minado REAL (no simulada, con su
+  wallet de verdad) de RVN por GPU en este mismo ordenador (RTX 4060
+  Laptop), en sesiones cortas y vigiladas. Reproducido 4 veces seguidas:
+  kawpowminer se conecta al pool y genera el DAG bien, pero se cierra
+  solo justo al arrancar a minar de verdad (código de salida 0xC0000409,
+  `STATUS_STACK_BUFFER_OVERRUN` de Windows) — mismo problema de fondo
+  que la entrada 17 (CUDA anticuado en kawpowminer para GPUs NVIDIA
+  actuales), síntoma distinto. Con esto, kawpowminer ha fallado en las
+  dos únicas GPUs NVIDIA reales probadas hasta hoy.
+- Bug real más importante encontrado en el proceso: cuando el motor de
+  minado se cerraba solo, el registro se quedaba en silencio total para
+  siempre, sin ningún aviso — ni siquiera en el log técnico completo.
+  Arreglado en `src/minar.py` (`SesionMinado.detenido_por_usuario` +
+  `iniciar_minado`): ahora se avisa claramente si el proceso termina
+  solo con un código de error, distinguiendo ese caso de cuando el
+  usuario pulsa "Detener minado".
+- Además, `interpretar_linea` no reconocía casi ningún formato real de
+  kawpowminer (ni el progreso del DAG ni su informe de velocidad
+  periódico, que no usa la palabra "speed" como xmrig) — se traduce
+  ahora también, así que el registro deja de estar "mudo" incluso
+  cuando todo va bien.
+- `monedas.py`, README.md y `CLAUDE.md` actualizados: RVN sigue
+  "soportada" (el código de este proyecto es correcto) pero con la nota
+  de riesgo ampliada a las dos GPUs reales probadas, ninguna con éxito
+  todavía.
+- Pendiente sin resolver: el aviso de "no puedo usar el modo de máximo
+  minado con GPU" que menciona Carlos no se encontró en ningún sitio
+  del código de esta app — puede ser ajeno al proyecto (Windows/NVIDIA).
+  Hace falta el texto exacto para investigarlo.
+- 175 tests en verde (antes 170).
+- `docs/DECISIONS.md` con el detalle completo de la reproducción y los
+  dos arreglos.
+
 ## 2026-08-24 (3) — RVN no mina en GPUs Blackwell (limitación de kawpowminer), KAS ya no se puede minar con GPU
 
 - Nueva ronda de pruebas en el "otro equipo" (GPU RTX 5060, Blackwell),

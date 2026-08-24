@@ -102,14 +102,15 @@ para no confundir, hasta que se implementen):
 verdad de principio a fin contra un pool real todavía. Pruébalo en tu
 ordenador y cuenta qué tal ha ido.
 
-**Nota sobre Ravencoin (RVN) en GPUs NVIDIA nuevas**: si tu tarjeta es
-de la generación Blackwell (RTX 50, por ejemplo una RTX 5060),
-kawpowminer no consigue minar hoy — el programa trae un CUDA demasiado
-antiguo para esa arquitectura tan nueva. Es una limitación del propio
-kawpowminer (un programa externo que no controlamos), no de esta app;
-verás un aviso claro en el registro si te pasa. En GPUs NVIDIA algo más
-antiguas debería funcionar con normalidad. Ver `docs/DECISIONS.md` para
-el detalle.
+**Nota sobre Ravencoin (RVN) en GPUs NVIDIA**: probado de verdad en dos
+tarjetas distintas (2026-08-24) y en ninguna de las dos consigue minar
+todavía — en una RTX 5060 (Blackwell) falla nada más generar el DAG; en
+una RTX 4060 Laptop (Ada Lovelace) genera el DAG bien pero kawpowminer
+se cierra solo justo al empezar a minar de verdad. Los dos son fallos
+del propio kawpowminer (un programa externo que no controlamos, con un
+CUDA interno anticuado para las GPUs NVIDIA actuales), no de esta app;
+verás un aviso claro en el registro si te pasa, en vez de quedarse en
+silencio. Ver `docs/DECISIONS.md` para el detalle.
 
 **Kaspa (KAS) se quitó de esta lista el 2026-08-24**: lolMiner retiró
 el algoritmo que necesitaba (la red de Kaspa está dominada por ASICs

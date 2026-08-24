@@ -1006,3 +1006,101 @@ hizo el diagnóstico están citados dentro del propio `GPU_ERROR.md`
 (ya borrado de la raíz una vez incorporado aquí) — repositorios
 oficiales de `RavenCommunity/kawpowminer`, `ethereum-mining/ethminer` y
 `Lolliedieb/lolMiner-releases`.
+
+## 2026-08-24 (18) — Minado real de RVN en ESTE ordenador: mismo tipo de fallo (kawpowminer, GPU NVIDIA moderna), y arreglado el silencio total del registro
+
+Probaste minar RVN con GPU en este mismo ordenador (RTX 4060 Laptop) y
+viste: se conecta al pool bien, pero después no aparece ningún log más,
+y la estimación de ingreso real se queda en 0,000000. Pediste
+expresamente que hiciera una prueba de minado REAL (no simulada) para
+ver exactamente lo mismo que tú — lo hice, con tu wallet real de RVN,
+en sesiones cortas (35-180 segundos, deteniendo el proceso yo mismo al
+final de cada una).
+
+**Lo que encontré, reproducido 4 veces seguidas de forma idéntica:**
+kawpowminer se conecta al pool, autoriza el worker, genera el DAG de la
+GPU correctamente (esta vez SÍ, a diferencia de la RTX 5060 de la
+entrada 17) y, justo al terminar de generarlo y arrancar el cálculo
+real, **el proceso se cierra solo**, con el código de salida
+`3221226505` (`0xC0000409` en hexadecimal — `STATUS_STACK_BUFFER_OVERRUN`
+de Windows, un fallo de corrupción de memoria detectado por el propio
+sistema). No es un cuelgue: el proceso muere de verdad, cada vez, en el
+mismo punto exacto ("Generated DAG + Light..." es la última línea que
+llega a imprimir).
+
+Es la MISMA familia de problema que la entrada 17 (kawpowminer 1.2.4
+trae un CUDA de 2021 demasiado antiguo para las GPUs NVIDIA actuales),
+pero con un síntoma distinto: en la RTX 5060 (Blackwell) fallaba ANTES,
+al generar el DAG ("invalid device symbol"); en esta RTX 4060 Laptop
+(Ada Lovelace) el DAG se genera bien pero revienta justo DESPUÉS, al
+arrancar el cálculo. **Con esto, kawpowminer ha fallado en las dos
+únicas GPUs NVIDIA reales con las que se ha probado este proyecto** —
+ninguna de las dos ha conseguido minar RVN todavía. Es una limitación
+real del propio kawpowminer 1.2.4 (un binario de terceros que ya no se
+actualiza con frecuencia), no de nuestro código: el comando que
+`minar.py` genera es correcto, kawpowminer arranca, se conecta y
+autentica bien — el fallo ocurre dentro del propio programa, en su
+código CUDA.
+
+**El motivo real de "no aparece ningún log más" es más grave que solo
+una traducción que falta: el registro se quedaba completamente mudo,
+sin ningún aviso, cuando el motor de minado se moría por su cuenta.**
+Investigando esto encontré DOS problemas separados, arreglé los dos:
+
+1. **`interpretar_linea` no reconocía casi ningún formato real de
+   kawpowminer.** Comprobado con la salida real capturada: ni la línea
+   de progreso del DAG ("Generating/Generated DAG..."), ni el informe
+   periódico de velocidad (formato real: `A0 0.00 h - cu0 0.00`, que NO
+   contiene la palabra "speed" como sí hace xmrig) coincidían con
+   ninguno de los casos que ya existían. Resultado: aunque kawpowminer
+   SÍ estaba dando señales de vida cada 5 segundos, el registro sencillo
+   no mostraba nada de eso. Arreglado en `src/minar.py`
+   (`interpretar_linea`): ahora se traducen esas líneas también
+   ("🧮 Preparando la GPU (generando el DAG)...", "🧮 GPU lista,
+   arrancando el cálculo real", y la velocidad real con el mismo formato
+   que ya se usaba para xmrig).
+2. **Cuando el motor se cerraba solo (crash), no había NINGÚN aviso, ni
+   siquiera en el log técnico completo.** El hilo que lee la salida del
+   proceso simplemente terminaba en silencio en cuanto el proceso moría,
+   porque ya no había más líneas que leer — nunca se comprobaba el
+   código de salida. Arreglado en `src/minar.py` (`SesionMinado`,
+   `iniciar_minado`): ahora, si el proceso termina con un código
+   distinto de 0 y NO fue porque el usuario pulsó "Detener minado"
+   (nuevo campo `SesionMinado.detenido_por_usuario`, para no avisar de
+   "error" cuando el cierre lo pediste tú), se muestra un aviso claro
+   explicando que el programa de minado se cerró solo y que no es un
+   fallo de esta app.
+
+Con los dos arreglos juntos, minar RVN en esta GPU ahora se ve así en
+el registro (verificado con otra prueba real): conecta → "preparando
+la GPU..." → "velocidad: 0.00 h/s" unas cuantas veces (normal mientras
+genera el DAG) → "GPU lista, arrancando el cálculo real" →
+inmediatamente el aviso claro de que el programa se cerró solo. Antes
+de este arreglo, después de "conectado al pool" no había NADA más, para
+siempre — exactamente lo que describiste.
+
+**Decisión sobre RVN**: se queda como "soportada" en `monedas.py` (el
+código de este proyecto es correcto), pero con la nota de riesgo
+actualizada explicando que, a día de hoy, no se ha conseguido un minado
+real completo en ninguna GPU NVIDIA probada — ni la tuya ni la del otro
+equipo. README.md y `CLAUDE.md` actualizados en el mismo sentido. Si en
+el futuro aparece una versión más moderna de kawpowminer (o un motor
+KawPow alternativo mejor mantenido), merece la pena reintentarlo.
+
+Sobre tu segunda pregunta ("dice que no puede utilizar el modo de
+máximo minado con GPU, no sé por qué"): no encontré ningún mensaje así
+en el código de esta app — ni `formulario.py`, ni el lanzador de
+rendimiento máximo, ni los módulos de aislamiento del núcleo/lista de
+controladores mencionan la GPU en ningún sitio (esas dos protecciones
+solo afectan al MSR mod de xmrig, que es cosa de CPU). Puede que sea un
+mensaje de Windows o del propio panel de NVIDIA, ajeno a este proyecto.
+Pendiente: que Carlos pase el texto exacto del aviso para poder
+localizar la causa real en vez de suponerla.
+
+Verificado: 175 tests en verde (5 nuevos: 2 sobre el aviso sesión
+cuando el proceso muere solo, 3 sobre las traducciones nuevas de
+kawpowminer). Las pruebas de minado real (con tu wallet de RVN, contra
+el pool real) se hicieron directamente con `minar.iniciar_minado`
+desde un script aparte (no desde `minar.py`/`formulario.py` tal cual,
+para poder controlar la duración exacta y detener el proceso yo mismo
+a los pocos segundos), nunca dejadas corriendo sin vigilancia.

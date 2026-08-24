@@ -141,11 +141,14 @@ MONEDAS_GPU = {
         "nombre": "Ravencoin", "algoritmo": "KawPow", "vram_min_gb": 4, "motor": "kawpowminer",
         "soportado_por_minar_hoy": True, "comision_pct": 0.0, "orden_respaldo": 3,
         "riesgo": (
-            "En GPUs NVIDIA de la generación Blackwell (RTX 50, "
-            "Compute 12.0) no mina hoy: kawpowminer trae un CUDA "
-            "demasiado antiguo para esa arquitectura (\"invalid device "
-            "symbol\"). Es una limitación del propio kawpowminer, no de "
-            "esta app — ver docs/DECISIONS.md."
+            "Probado de verdad en dos GPUs NVIDIA distintas (2026-08-24) y "
+            "ninguna consigue minar todavía: en una RTX 5060 (Blackwell) "
+            "falla al generar el DAG (\"invalid device symbol\"); en una "
+            "RTX 4060 Laptop (Ada Lovelace) genera el DAG bien pero "
+            "kawpowminer se cierra solo justo al empezar a minar de "
+            "verdad (código de salida 0xC0000409). Los dos son fallos del "
+            "propio kawpowminer (un binario de terceros con un CUDA "
+            "interno anticuado), no de esta app — ver docs/DECISIONS.md."
         ),
     },
     "ERG": {"nombre": "Ergo", "algoritmo": "Autolykos2", "vram_min_gb": 6, "motor": "lolMiner / T-Rex", "orden_respaldo": 4},
